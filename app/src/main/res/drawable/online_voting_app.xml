@@ -1,0 +1,44 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+
+    <!-- Monitor outline -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#002F6C"
+        android:strokeWidth="8"
+        android:pathData="M40,40h120a10,10 0 0,1 10,10v80a10,10 0 0,1 -10,10h-120a10,10 0 0,1 -10,-10v-80a10,10 0 0,1 10,-10z" />
+
+    <!-- User icons -->
+    <path
+        android:fillColor="#002F6C"
+        android:pathData="M60,80a10,10 0 1,0 0.01,0z M50,100a20,20 0 0,1 20,0v10h-20z" />
+    <path
+        android:fillColor="#002F6C"
+        android:pathData="M140,80a10,10 0 1,0 0.01,0z M130,100a20,20 0 0,1 20,0v10h-20z" />
+
+    <!-- Checkbox with check -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#002F6C"
+        android:strokeWidth="6"
+        android:pathData="M85,45h30v30h-30z" />
+    <path
+        android:strokeColor="#002F6C"
+        android:strokeWidth="6"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000"
+        android:pathData="M90,60l7,7 13,-13" />
+
+    <!-- Monitor stand -->
+    <path
+        android:strokeColor="#002F6C"
+        android:strokeWidth="8"
+        android:fillColor="#00000000"
+        android:pathData="M90,140h20v10h-20z M70,160h60a5,5 0 0,1 5,5v5h-70v-5a5,5 0 0,1 5,-5z" />
+
+    <!-- Text is not supported in VectorDrawable, add via Compose/Views -->
+</vector>

@@ -1,0 +1,42 @@
+# Android/IntelliJ/Studio
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+/.idea/misc.xml
+/.idea/deploymentTargetDropDown.xml
+/.idea/render.experimental.xml
+
+# macOS
+.DS_Store
+
+# Build outputs
+/build/
+/captures/
+/output.json
+
+# NDK/Native
+.externalNativeBuild/
+/cxx/
+gen-external-apklibs/
+
+# Signing keys
+*.jks
+*.keystore
+
+# Firebase/Google Services
+google-services.json
+
+# Logs
+*.log
+
+# APKs
+*.apk
+
+# Memory Dumps
+*.hprof
