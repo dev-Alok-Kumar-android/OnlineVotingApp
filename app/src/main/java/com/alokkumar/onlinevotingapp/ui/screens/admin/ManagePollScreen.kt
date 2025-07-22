@@ -1,4 +1,4 @@
-package com.alokkumar.onlinevotingapp.screens.admin
+package com.alokkumar.onlinevotingapp.ui.screens.admin
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
@@ -39,6 +39,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.alokkumar.onlinevotingapp.R
 import com.alokkumar.onlinevotingapp.model.PollDocument
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -136,7 +137,7 @@ fun ManagePollScreen(navController: NavController) {
                             IconButton(onClick = {
                                 navController.navigate("add_candidate/${poll.docId}")
                             }) {
-                                Icon(imageVector = ImageVector.vectorResource(id = com.alokkumar.onlinevotingapp.R.drawable.baseline_person_add_alt_1_24),
+                                Icon(imageVector = ImageVector.vectorResource(id = R.drawable.baseline_person_add_alt_1_24),
                                     contentDescription = "Add Candidate")
                             }
                         }

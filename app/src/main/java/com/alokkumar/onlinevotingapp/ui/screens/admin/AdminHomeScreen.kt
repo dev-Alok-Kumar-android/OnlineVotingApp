@@ -1,17 +1,19 @@
-package com.alokkumar.onlinevotingapp.screens.admin
+package com.alokkumar.onlinevotingapp.ui.screens.admin
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -26,7 +28,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -38,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.alokkumar.onlinevotingapp.R
+import com.alokkumar.onlinevotingapp.Routes
 import com.google.firebase.auth.FirebaseAuth
 
 
@@ -49,6 +51,7 @@ fun AdminHomeScreen(navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .padding(WindowInsets.systemBars.asPaddingValues())
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -136,8 +139,8 @@ fun AdminHomeScreen(navController: NavController) {
                         confirmButton = {
                             TextButton(onClick = {
                                 FirebaseAuth.getInstance().signOut()
-                                navController.navigate("auth") {
-                                    popUpTo("user_home") { inclusive = true }
+                                navController.navigate(Routes.AUTH) {
+                                    popUpTo(Routes.ADMIN_HOME) { inclusive = true }
                                 }
                                 showLogoutDialog = false
                             }) {

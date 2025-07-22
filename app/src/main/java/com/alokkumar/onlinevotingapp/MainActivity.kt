@@ -17,6 +17,7 @@ import com.alokkumar.onlinevotingapp.ui.theme.OnlineVotingAppTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+//        enableEdgeToEdge()
         setContent {
             OnlineVotingAppTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->

@@ -29,12 +29,12 @@ An Android application for secure and easy online voting. Built with **Jetpack C
 
 ## 🧑‍🎨 Built With
 
-| Tech                | Usage                          |
-|---------------------|--------------------------------|
-| **Kotlin**          | Android app logic              |
+| Tech                | Usage                           |
+|---------------------|---------------------------------|
+| **Kotlin**          | Android app logic               |
 | **Jetpack Compose** | UI framework for modern Android |
-| **Firebase Auth**   | Login/signup/reset via email   |
-| **Cloud Firestore** | Store polls, users, votes      |
+| **Firebase Auth**   | Login/signup/reset via email    |
+| **Cloud Firestore** | Store polls, users, votes       |
 
 ---
 
@@ -48,13 +48,35 @@ An Android application for secure and easy online voting. Built with **Jetpack C
 
 ---
 
-## 📸 Screenshots
+### 📸 Screenshots
 
-| Auth Screen | Admin Home Screen | Voter Poll List | Poll Action Screen | 
-|-------------|------------------|------------------|------------------|
-| ![Auth](screenshots/auth_screen.png) | ![Admin](screenshots/admin_home.png) | ![Voter](screenshots/voter_polls.png) |![Voter](screenshots/poll_action.png) |
+#### 🔐 Authentication Screens
+
+| Auth Screen                            | Login Screen                                                | Registration Screen                                   |
+|----------------------------------------|-------------------------------------------------------------|-------------------------------------------------------|
+| ![Auth](screenshots/auth_screen.png)   | ![Auth](screenshots/login_screen.png)                       | ![Auth](screenshots/registration_screen.png)          |
+| Choose admin or voter                  | Login Screen for Voter; admin login screen looks similar    | Registration Screen for Voter, not for admins         |
 
 ---
+
+#### 🏠 Landing Pages
+
+| Admin Home Screen                    | Voter Poll List                                        |
+|--------------------------------------|--------------------------------------------------------|
+| ![Admin](screenshots/admin_home.png) | ![Polls](screenshots/voter_polls.png)                  |
+| Home/Landing screen for Admin        | Landing page for Voter/User. Here they can select Poll |
+
+---
+
+#### 🗳️ Voter Screens
+
+| Poll Action Screen                           | Vote Screen                             | Result Screen                     |
+|----------------------------------------------|-----------------------------------------|-----------------------------------|
+| ![VoteOrResult](screenshots/poll_action.png) | ![Vote](screenshots/vote.png)           | ![Result](screenshots/result.png) |
+| Poll actions: Vote or View Result for Voter  | Voter selects and votes for a candidate | Voter sees the voting result      |
+
+---
+
 
 ## 🚀 Getting Started
 
@@ -89,4 +111,4 @@ An Android application for secure and easy online voting. Built with **Jetpack C
 ### 📫 Contact
   Feel free to reach out via:
 - Gmail: dev.alokkumar.droid@gmail.com
-- Teligram: https://t.me/dev_alokkumar_droid
+- Telegram: https://t.me/dev_alokkumar_droid

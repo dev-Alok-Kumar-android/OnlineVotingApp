@@ -1,4 +1,4 @@
-package com.alokkumar.onlinevotingapp.screens.user
+package com.alokkumar.onlinevotingapp.ui.screens.user
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable

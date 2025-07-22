@@ -1,4 +1,4 @@
-package com.alokkumar.onlinevotingapp.screens
+package com.alokkumar.onlinevotingapp.ui.screens.auth
 
 
 import android.util.Patterns
@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.alokkumar.onlinevotingapp.R
+import com.alokkumar.onlinevotingapp.Routes
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.firestore
@@ -150,8 +151,8 @@ fun AdminLoginScreen(modifier: Modifier = Modifier, navController: NavController
                             .addOnSuccessListener { document ->
                                 isLoading = false
                                 if (document.exists()) {
-                                    navController.navigate("admin_home") {
-                                        popUpTo("admin_login") { inclusive = true }
+                                    navController.navigate(Routes.ADMIN_HOME) {
+                                        popUpTo(Routes.AUTH) { inclusive = true }
                                     }
                                 } else {
                                     auth.signOut()

@@ -1,4 +1,4 @@
-package com.alokkumar.onlinevotingapp.screens.admin
+package com.alokkumar.onlinevotingapp.ui.screens.admin
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement

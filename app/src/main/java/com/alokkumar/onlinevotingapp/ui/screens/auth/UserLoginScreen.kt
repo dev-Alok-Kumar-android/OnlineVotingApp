@@ -1,4 +1,4 @@
-package com.alokkumar.onlinevotingapp.screens
+package com.alokkumar.onlinevotingapp.ui.screens.auth
 
 
 import android.util.Patterns
