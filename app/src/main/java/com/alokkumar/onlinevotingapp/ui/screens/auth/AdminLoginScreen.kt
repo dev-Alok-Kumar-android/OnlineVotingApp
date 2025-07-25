@@ -179,10 +179,3 @@ fun AdminLoginScreen(modifier: Modifier = Modifier, navController: NavController
 
     }
 }
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-private fun LoginScreenPreview() {
-    AdminLoginScreen(navController = NavController(LocalContext.current))
-
-}

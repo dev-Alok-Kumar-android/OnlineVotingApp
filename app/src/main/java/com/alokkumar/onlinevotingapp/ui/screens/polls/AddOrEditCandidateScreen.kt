@@ -1,4 +1,4 @@
-package com.alokkumar.onlinevotingapp.ui.screens.admin
+package com.alokkumar.onlinevotingapp.ui.screens.polls
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
@@ -13,7 +13,9 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -21,20 +23,44 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.tasks.await
 
 @Composable
-fun AddCandidateScreen(navController: NavController, pollId: String) {
+fun AddOrEditCandidateScreen(
+    navController: NavController,
+    pollId: String,
+    candidateId: String? = null
+) {
     var name by remember { mutableStateOf("") }
     var party by remember { mutableStateOf("") }
     var agenda by remember { mutableStateOf("") }
+    var votes by remember { mutableIntStateOf(0) }
     var isSubmitting by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val db = FirebaseFirestore.getInstance()
+    val isEditMode = candidateId != null
+
+    // Load candidate if in edit mode
+    LaunchedEffect(Unit) {
+        if (isEditMode) {
+            try {
+                val doc = db.collection("polls").document(pollId)
+                    .collection("candidates").document(candidateId)
+                    .get().await()
+
+                name = doc.getString("name") ?: ""
+                party = doc.getString("party") ?: ""
+                agenda = doc.getString("agenda") ?: ""
+                votes = doc.getLong("votes")?.toInt() ?: 0
+            } catch (e: Exception) {
+                Toast.makeText(context, "Failed to load candidate $e.message", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -44,7 +70,7 @@ fun AddCandidateScreen(navController: NavController, pollId: String) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "Add New Candidate",
+            text = if (isEditMode) "Edit Candidate" else "Add New Candidate",
             fontSize = 24.sp,
             modifier = Modifier.padding(bottom = 16.dp)
         )
@@ -85,34 +111,46 @@ fun AddCandidateScreen(navController: NavController, pollId: String) {
             onClick = {
                 if (name.isBlank() || party.isBlank() || agenda.isBlank()) {
                     Toast.makeText(context, "Please fill in all fields", Toast.LENGTH_SHORT).show()
+                    return@Button
                 }
 
                 isSubmitting = true
 
-                val candidate = hashMapOf(
+                val candidateMap = hashMapOf(
                     "name" to name,
                     "party" to party,
                     "agenda" to agenda,
-                    "votes" to 0
+                    "votes" to votes  // will be 0 in add mode, loaded value in edit mode
                 )
 
-                db.collection("polls")
+                val candidateCollection = db.collection("polls")
                     .document(pollId)
                     .collection("candidates")
-                    .add(candidate)
-                    .addOnSuccessListener {
-                        Toast.makeText(context, "Candidate added", Toast.LENGTH_SHORT).show()
-                        name = ""
-                        party = ""
-                        agenda = ""
-                        navController.popBackStack() // Optional: go back to candidate list
-                    }
-                    .addOnFailureListener { e ->
-                        Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
-                    }
-                    .addOnCompleteListener {
-                        isSubmitting = false
-                    }
+
+                if (isEditMode) {
+                    candidateCollection.document(candidateId).update(candidateMap as Map<String, Any>)
+                        .addOnSuccessListener {
+                            Toast.makeText(context, "Candidate updated", Toast.LENGTH_SHORT).show()
+                            navController.popBackStack()
+                        }
+                        .addOnFailureListener {
+                            Toast.makeText(context, "Update failed", Toast.LENGTH_SHORT).show()
+                        }
+                        .addOnCompleteListener { isSubmitting = false }
+                } else {
+                    candidateCollection.add(candidateMap)
+                        .addOnSuccessListener {
+                            Toast.makeText(context, "Candidate added", Toast.LENGTH_SHORT).show()
+                            name = ""
+                            party = ""
+                            agenda = ""
+                            navController.popBackStack()
+                        }
+                        .addOnFailureListener {
+                            Toast.makeText(context, "Error: ${it.message}", Toast.LENGTH_SHORT).show()
+                        }
+                        .addOnCompleteListener { isSubmitting = false }
+                }
             },
             enabled = !isSubmitting,
             modifier = Modifier.fillMaxWidth()
@@ -121,4 +159,3 @@ fun AddCandidateScreen(navController: NavController, pollId: String) {
         }
     }
 }
-

@@ -47,7 +47,8 @@ import com.alokkumar.onlinevotingapp.Routes
 import com.alokkumar.onlinevotingapp.viewmodel.AuthViewModel
 
 @Composable
-fun UserLoginScreen(modifier: Modifier = Modifier, navController: NavController, authViewModel: AuthViewModel = viewModel()) {
+fun UserLoginScreen(modifier: Modifier = Modifier, navController: NavController,
+                    authViewModel: AuthViewModel = viewModel()) {
 
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }

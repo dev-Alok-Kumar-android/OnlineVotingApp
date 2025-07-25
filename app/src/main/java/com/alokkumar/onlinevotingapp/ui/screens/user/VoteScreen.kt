@@ -105,7 +105,10 @@ fun VoteScreen(navController: NavController, pollId: String) {
             )
         }
 
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.weight(1f)
+        ) {
             items(candidates) { candidate ->
                 Card(
                     modifier = Modifier

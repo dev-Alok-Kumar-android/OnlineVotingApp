@@ -48,6 +48,32 @@ fun AdminHomeScreen(navController: NavController) {
 
     var showLogoutDialog by remember { mutableStateOf(false) }
 
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            title = { Text("Logout") },
+            text = { Text("Are you sure you want to logout?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    FirebaseAuth.getInstance().signOut()
+                    navController.navigate(Routes.AUTH) {
+                        popUpTo(Routes.ADMIN_HOME) { inclusive = true }
+                    }
+                    showLogoutDialog = false
+                }) {
+                    Text("Yes")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showLogoutDialog = false
+                }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -99,63 +125,51 @@ fun AdminHomeScreen(navController: NavController) {
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 modifier = Modifier.fillMaxWidth()
             ) {
+
                 AdminMenuItem(
                     title = "VIEW STATS",
                     iconRes = R.drawable.outline_table_chart_24,
-                    onClick = { }
+                    onClick = {
+                        navController.navigate(Routes.VIEW_STATS)
+                    }
                 )
 
                 AdminMenuItem(
                     title = "Monitor Votes",
                     iconRes = R.drawable.outline_visibility_24,
-                    onClick = { }
+                    onClick = {
+                        navController.navigate(Routes.MONITOR_VOTES)
+                    }
                 )
             }
                 Row(
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                AdminMenuItem(
-                    title = "POLL RESULTS",
-                    iconRes = R.drawable.baseline_bar_chart_24,
-                    onClick = {  }
-                )
 
-
-
-                AdminMenuItem(
-                    title = "LOGOUT",
-                    iconRes = R.drawable.baseline_logout_24,
-                    onClick = {
-                        // Handle logout logic here
-                        showLogoutDialog = true
-                    }
-                )
-                if (showLogoutDialog) {
-                    AlertDialog(
-                        onDismissRequest = { showLogoutDialog = false },
-                        title = { Text("Logout") },
-                        text = { Text("Are you sure you want to logout?") },
-                        confirmButton = {
-                            TextButton(onClick = {
-                                FirebaseAuth.getInstance().signOut()
-                                navController.navigate(Routes.AUTH) {
-                                    popUpTo(Routes.ADMIN_HOME) { inclusive = true }
-                                }
-                                showLogoutDialog = false
-                            }) {
-                                Text("Yes")
-                            }
-                        },
-                        dismissButton = {
-                            TextButton(onClick = {
-                                showLogoutDialog = false
-                            }) {
-                                Text("Cancel")
-                            }
+                    AdminMenuItem(
+                        title = "GO TO USER",
+                        iconRes = R.drawable.baseline_person_24,
+                        onClick = {
+                            navController.navigate(Routes.USER_HOME)
                         }
                     )
-                }
+                    AdminMenuItem(
+                        title = "LOGOUT",
+                        iconRes = R.drawable.baseline_logout_24,
+                        onClick = {
+                            showLogoutDialog = true
+                        }
+                    )
+
+            }
+            Row (
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                modifier = Modifier.fillMaxWidth()
+            ){
+
+                // More options can be added here
+
             }
         }
     }
@@ -175,8 +189,7 @@ fun AdminMenuItem(title: String, iconRes: Int, onClick: () -> Unit) {
             painter = painterResource(id = iconRes),
             contentDescription = title,
             colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary),
-                    modifier = Modifier
-                .size(80.dp)
+                    modifier = Modifier.size(80.dp)
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(

@@ -164,7 +164,7 @@ fun UserRegistrationScreen(modifier: Modifier = Modifier,navController: NavContr
                     {success,errorMessage->
                         if(success){
                             isLoading = false
-                            navController.navigate(Routes.USER_REGISTRATION){
+                            navController.navigate(Routes.USER_HOME){
                                 popUpTo(Routes.AUTH){
                                     inclusive = true
                                 }
@@ -187,7 +187,7 @@ fun UserRegistrationScreen(modifier: Modifier = Modifier,navController: NavContr
         Spacer(Modifier.height(40.dp))
 
         TextButton(onClick = {
-            navController.navigate(Routes.USER_LOGIN)
+            navController.popBackStack()
         }) {
             Text("Already have an account? Login")
         }
