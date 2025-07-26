@@ -95,7 +95,7 @@ fun AdminLoginScreen(modifier: Modifier = Modifier, navController: NavController
             },
             isError = email.isNotBlank() && !isEmailValid,
             label = {
-                Text("Enter Admin name")
+                Text("Enter Admin email")
             },
             maxLines = 1,
             keyboardOptions = KeyboardOptions(
