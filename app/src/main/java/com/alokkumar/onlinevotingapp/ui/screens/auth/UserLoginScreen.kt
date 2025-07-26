@@ -1,6 +1,5 @@
 package com.alokkumar.onlinevotingapp.ui.screens.auth
 
-
 import android.util.Patterns
 import android.widget.Toast
 import androidx.compose.foundation.Image
@@ -45,6 +44,10 @@ import androidx.navigation.NavController
 import com.alokkumar.onlinevotingapp.R
 import com.alokkumar.onlinevotingapp.Routes
 import com.alokkumar.onlinevotingapp.viewmodel.AuthViewModel
+import com.google.firebase.Firebase
+import com.google.firebase.Timestamp
+import com.google.firebase.auth.auth
+import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
 fun UserLoginScreen(modifier: Modifier = Modifier, navController: NavController,
@@ -52,7 +55,7 @@ fun UserLoginScreen(modifier: Modifier = Modifier, navController: NavController,
 
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) }
+    var isLoginLoading by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val isEmailValid = Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()
 
@@ -144,31 +147,77 @@ fun UserLoginScreen(modifier: Modifier = Modifier, navController: NavController,
 
         Button(
             onClick = {
-                isLoading = true
+                isLoginLoading = true
+
                 if (email.isBlank() || password.isBlank()) {
-                    isLoading = false
+                    isLoginLoading = false
+                    Toast.makeText(context, "Fill in all fields", Toast.LENGTH_SHORT).show()
                     return@Button
                 }
+
                 authViewModel.login(email.trim(), password) { success, errorMessage ->
                     if (success) {
-                        isLoading = false
-                        navController.navigate(Routes.USER_HOME) {
-                            popUpTo(Routes.AUTH) {
-                                inclusive = true
-                            }
+                        val db = FirebaseFirestore.getInstance()
+                        val user = Firebase.auth.currentUser
+                        if (user != null) {
+                            val db = FirebaseFirestore.getInstance()
+                            val userDocRef = db.collection("users").document(user.uid)
+
+                            userDocRef.get()
+                                .addOnSuccessListener { document ->
+                                    if (document.exists()) {
+                                        val isVerified = document.getBoolean("isVerified") ?: false
+                                        val isDeleted = document.getBoolean("isDeleted") ?: false
+
+                                        if (!isVerified) {
+                                            Toast.makeText(context, "Your account is not verified.", Toast.LENGTH_SHORT).show()
+                                        } else if (isDeleted) {
+                                            Toast.makeText(context, "Your account has been deleted.", Toast.LENGTH_SHORT).show()
+                                        } else {
+
+                                            val newUserData = hashMapOf(
+                                                "uid" to user.uid,
+                                                "name" to (user.displayName ?: ""),
+                                                "email" to user.email,
+                                                "isVerified" to false,
+                                                "isDeleted" to false,
+                                                "createdAt" to Timestamp.now()
+                                            )
+                                            FirebaseFirestore.getInstance().collection("users").document(document.id).set(newUserData)
+
+
+
+                                            navController.navigate(Routes.USER_HOME) {
+                                                popUpTo(Routes.AUTH) { inclusive = true }
+                                            }
+                                        }
+                                    } else {
+                                        Toast.makeText(context, "User data not found. Contact admin.", Toast.LENGTH_SHORT).show()
+                                    }
+
+                                    isLoginLoading = false
+                                }
+                                .addOnFailureListener {
+                                    Toast.makeText(context, "Error: ${it.message}", Toast.LENGTH_SHORT).show()
+                                    isLoginLoading = false
+                                }
+
+                        } else {
+                            Toast.makeText(context, "User not found", Toast.LENGTH_SHORT).show()
+                            isLoginLoading = false
                         }
                     } else {
                         Toast.makeText(context, errorMessage ?: "Something went wrong", Toast.LENGTH_SHORT).show()
-                        isLoading = false
+                        isLoginLoading = false
                     }
                 }
             },
-            Modifier
+                    Modifier
                 .fillMaxWidth()
                 .height(45.dp),
-            enabled = !isLoading
+            enabled = !isLoginLoading
         ) {
-            Text(if (isLoading) "Loading..." else "Login", fontSize = 22.sp)
+            Text(if (isLoginLoading) "Loading..." else "Login", fontSize = 22.sp)
         }
 
         Spacer(Modifier.height(40.dp))

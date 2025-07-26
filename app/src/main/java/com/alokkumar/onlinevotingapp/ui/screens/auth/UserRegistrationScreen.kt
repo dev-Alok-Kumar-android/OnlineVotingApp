@@ -39,6 +39,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.alokkumar.onlinevotingapp.Routes
 import com.alokkumar.onlinevotingapp.viewmodel.AuthViewModel
+import com.google.firebase.Firebase
+import com.google.firebase.Timestamp
+import com.google.firebase.auth.auth
+import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
 fun UserRegistrationScreen(modifier: Modifier = Modifier,navController: NavController, authViewModel: AuthViewModel = viewModel() ) {
@@ -151,27 +155,55 @@ fun UserRegistrationScreen(modifier: Modifier = Modifier,navController: NavContr
         Button(
             onClick = {
                 isLoading = true
-                if (email.isBlank() || password.isBlank() || name.isBlank() || phoneNumber.isBlank()) {
-                    Toast.makeText(context, "Fill all field", Toast.LENGTH_SHORT).show()
-                    isLoading = false
-                } else if (password != confirmPassword) {
-                    Toast.makeText(context, "Password not matched", Toast.LENGTH_SHORT).show()
-                    isLoading = false
-                } else {
+                when {
+                    email.isBlank() || password.isBlank() || name.isBlank() || phoneNumber.isBlank() || confirmPassword.isBlank() -> {
+                        Toast.makeText(context, "Please fill all fields", Toast.LENGTH_SHORT).show()
+                        isLoading = false
+                    }
+                    password != confirmPassword -> {
+                        Toast.makeText(context, "Passwords do not match", Toast.LENGTH_SHORT).show()
+                        isLoading = false
+                    }
+                    else -> {
+                        // Step 2: Proceed with signup
+                        authViewModel.signup(email.trim(), name.trim(), phoneNumber.trim(), password) { success, errorMessage ->
+                            if (success) {
+                                val user = Firebase.auth.currentUser
+                                val db = FirebaseFirestore.getInstance()
 
+                                if (user != null) {
+                                    val userDocRef = db.collection("users").document(user.uid)
+                                    val userData = hashMapOf(
+                                        "uid" to user.uid,
+                                        "email" to user.email,
+                                        "name" to name.trim(),
+                                        "phoneNumber" to phoneNumber.trim(),
+                                        "isVerified" to false,
+                                        "isDeleted" to false,
+                                        "createdAt" to Timestamp.now()
+                                    )
 
-                    authViewModel.signup(email, name, phoneNumber, password)
-                    {success,errorMessage->
-                        if(success){
-                            isLoading = false
-                            navController.navigate(Routes.USER_HOME){
-                                popUpTo(Routes.AUTH){
-                                    inclusive = true
+                                    userDocRef.set(userData)
+                                        .addOnSuccessListener {
+                                            isLoading = false
+                                            navController.navigate(Routes.USER_HOME) {
+                                                popUpTo(Routes.AUTH) {
+                                                    inclusive = true
+                                                }
+                                            }
+                                        }
+                                        .addOnFailureListener {
+                                            Toast.makeText(context, "Failed to store user data", Toast.LENGTH_SHORT).show()
+                                            isLoading = false
+                                        }
+                                } else {
+                                    Toast.makeText(context, "User not found after signup", Toast.LENGTH_SHORT).show()
+                                    isLoading = false
                                 }
+                            } else {
+                                Toast.makeText(context, errorMessage ?: "Something went wrong", Toast.LENGTH_SHORT).show()
+                                isLoading = false
                             }
-                        }else{
-                            isLoading = false
-                            Toast.makeText(context,errorMessage?:"Something went wrong", Toast.LENGTH_SHORT).show()
                         }
                     }
                 }

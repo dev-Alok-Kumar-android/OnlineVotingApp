@@ -36,13 +36,27 @@ class AuthViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 auth.createUserWithEmailAndPassword(email, password).await()
-                val uId = auth.currentUser?.uid ?: ""
-                val userModel = UserModel(uId, name, email, phoneNumber)
-                fireStore.collection("users").document(uId).set(userModel).await()
-                onResult(true, null)
+                val uId = auth.currentUser?.uid
+
+                if (uId.isNullOrEmpty()) {
+                    onResult(false, "Failed to get user ID")
+                    return@launch
+                }
+                    val userModel = UserModel(
+                        uid = uId,
+                        name = name,
+                        email = email,
+                        phone = phoneNumber,
+                        isVerified = false,
+                        isDeleted = false,
+                        createdAt = com.google.firebase.Timestamp.now()
+                    )
+                    fireStore.collection("users").document(uId).set(userModel).await()
+                    onResult(true, null)
             } catch (e: Exception) {
                 onResult(false, e.localizedMessage)
             }
+
         }
     }
 

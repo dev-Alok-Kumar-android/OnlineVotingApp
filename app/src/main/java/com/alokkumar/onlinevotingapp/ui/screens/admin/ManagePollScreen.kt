@@ -162,7 +162,7 @@ fun ManagePollScreen(navController: NavController) {
 
         Button(
             onClick = {
-                navController.navigate("add_or_edit_poll")
+                navController.navigate(Routes.ADD_OR_EDIT_POLL)
             },
             modifier = Modifier.align(Alignment.CenterHorizontally)
         ) {
