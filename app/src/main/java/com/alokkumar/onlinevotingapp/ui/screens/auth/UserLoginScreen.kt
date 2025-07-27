@@ -19,9 +19,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -44,10 +44,6 @@ import androidx.navigation.NavController
 import com.alokkumar.onlinevotingapp.R
 import com.alokkumar.onlinevotingapp.Routes
 import com.alokkumar.onlinevotingapp.viewmodel.AuthViewModel
-import com.google.firebase.Firebase
-import com.google.firebase.Timestamp
-import com.google.firebase.auth.auth
-import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
 fun UserLoginScreen(modifier: Modifier = Modifier, navController: NavController,
@@ -55,9 +51,10 @@ fun UserLoginScreen(modifier: Modifier = Modifier, navController: NavController,
 
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
-    var isLoginLoading by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val isEmailValid = Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()
+    val isLoginLoading by authViewModel.loginLoading
+    val loginError by authViewModel.loginError
 
     Column(
         modifier = modifier
@@ -145,79 +142,28 @@ fun UserLoginScreen(modifier: Modifier = Modifier, navController: NavController,
 
         Spacer(Modifier.height(10.dp))
 
-        Button(
-            onClick = {
-                isLoginLoading = true
-
-                if (email.isBlank() || password.isBlank()) {
-                    isLoginLoading = false
-                    Toast.makeText(context, "Fill in all fields", Toast.LENGTH_SHORT).show()
-                    return@Button
-                }
-
-                authViewModel.login(email.trim(), password) { success, errorMessage ->
-                    if (success) {
-                        val db = FirebaseFirestore.getInstance()
-                        val user = Firebase.auth.currentUser
-                        if (user != null) {
-                            val db = FirebaseFirestore.getInstance()
-                            val userDocRef = db.collection("users").document(user.uid)
-
-                            userDocRef.get()
-                                .addOnSuccessListener { document ->
-                                    if (document.exists()) {
-                                        val isVerified = document.getBoolean("isVerified") ?: false
-                                        val isDeleted = document.getBoolean("isDeleted") ?: false
-
-                                        if (!isVerified) {
-                                            Toast.makeText(context, "Your account is not verified.", Toast.LENGTH_SHORT).show()
-                                        } else if (isDeleted) {
-                                            Toast.makeText(context, "Your account has been deleted.", Toast.LENGTH_SHORT).show()
-                                        } else {
-
-                                            val newUserData = hashMapOf(
-                                                "uid" to user.uid,
-                                                "name" to (user.displayName ?: ""),
-                                                "email" to user.email,
-                                                "isVerified" to false,
-                                                "isDeleted" to false,
-                                                "createdAt" to Timestamp.now()
-                                            )
-                                            FirebaseFirestore.getInstance().collection("users").document(document.id).set(newUserData)
-
-
-
-                                            navController.navigate(Routes.USER_HOME) {
-                                                popUpTo(Routes.AUTH) { inclusive = true }
-                                            }
-                                        }
-                                    } else {
-                                        Toast.makeText(context, "User data not found. Contact admin.", Toast.LENGTH_SHORT).show()
-                                    }
-
-                                    isLoginLoading = false
-                                }
-                                .addOnFailureListener {
-                                    Toast.makeText(context, "Error: ${it.message}", Toast.LENGTH_SHORT).show()
-                                    isLoginLoading = false
-                                }
-
-                        } else {
-                            Toast.makeText(context, "User not found", Toast.LENGTH_SHORT).show()
-                            isLoginLoading = false
-                        }
-                    } else {
-                        Toast.makeText(context, errorMessage ?: "Something went wrong", Toast.LENGTH_SHORT).show()
-                        isLoginLoading = false
+        Button(onClick = {
+            if (email.isBlank() || password.isBlank()) {
+                Toast.makeText(context, "Fill in all fields", Toast.LENGTH_SHORT).show()
+            } else {
+                authViewModel.login(email.trim(), password) {
+                    Toast.makeText(context, "Login successful", Toast.LENGTH_SHORT).show()
+                    navController.navigate(Routes.USER_HOME) {
+                        popUpTo(Routes.AUTH) { inclusive = true }
                     }
                 }
-            },
-                    Modifier
-                .fillMaxWidth()
-                .height(45.dp),
-            enabled = !isLoginLoading
-        ) {
-            Text(if (isLoginLoading) "Loading..." else "Login", fontSize = 22.sp)
+            }
+        },
+            Modifier.fillMaxWidth().height(45.dp),
+            enabled = !isLoginLoading) {
+            Text(if (isLoginLoading) "Logging in..." else "Login")
+        }
+
+        loginError?.let {
+            LaunchedEffect(it) {
+                Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                authViewModel.loginError.value = null
+            }
         }
 
         Spacer(Modifier.height(40.dp))

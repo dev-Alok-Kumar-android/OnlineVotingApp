@@ -18,6 +18,7 @@ import com.alokkumar.onlinevotingapp.ui.screens.admin.ManageVoterScreen
 import com.alokkumar.onlinevotingapp.ui.screens.polls.AddOrEditPollScreen
 import com.alokkumar.onlinevotingapp.ui.screens.admin.MonitorVotesScreen
 import com.alokkumar.onlinevotingapp.ui.screens.admin.ViewStatsScreen
+import com.alokkumar.onlinevotingapp.ui.screens.auth.ForgotPasswordScreen
 import com.alokkumar.onlinevotingapp.ui.screens.polls.PollResultScreen
 import com.alokkumar.onlinevotingapp.ui.screens.user.PollActionsScreen
 import com.alokkumar.onlinevotingapp.ui.screens.user.ResultScreen
@@ -46,6 +47,7 @@ fun AppNavigation(modifier: Modifier = Modifier) {
         composable(Routes.ADMIN_LOGIN) { AdminLoginScreen(modifier, navController) }
         composable(Routes.USER_LOGIN) { UserLoginScreen(modifier, navController) }
         composable(Routes.USER_REGISTRATION) { UserRegistrationScreen(modifier, navController) }
+
 
         // 👨‍💼 Admin Screens
         composable(Routes.ADMIN_HOME) { AdminHomeScreen(navController) }
