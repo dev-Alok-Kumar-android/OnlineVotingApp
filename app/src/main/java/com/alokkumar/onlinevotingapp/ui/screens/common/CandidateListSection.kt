@@ -1,7 +1,6 @@
 package com.alokkumar.onlinevotingapp.ui.screens.common
 
 
-import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -39,6 +38,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.alokkumar.onlinevotingapp.Routes
 import com.alokkumar.onlinevotingapp.model.Candidate
+import com.alokkumar.onlinevotingapp.viewmodel.common.CandidateListViewModel
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -48,7 +48,8 @@ fun CandidateListSection(
     pollId: String,
     navController: NavController,
     db: FirebaseFirestore,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: CandidateListViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 ) {
     val context = LocalContext.current
     var selectedCandidateForDelete by remember { mutableStateOf<Candidate?>(null) }
@@ -80,7 +81,6 @@ fun CandidateListSection(
                             modifier = modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.End
                         ) {
-
                             IconButton(onClick = {
                                 selectedCandidateForDelete = candidate
                             }) {
@@ -95,7 +95,6 @@ fun CandidateListSection(
                 }
             }
         }
-
     }
 
     selectedCandidateForDelete?.let { candidate ->
@@ -106,25 +105,28 @@ fun CandidateListSection(
                 Text(
                     buildAnnotatedString {
                         append("Delete candidate ' ")
-                        withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary, fontSize = 20.sp, fontWeight = MaterialTheme.typography.titleMedium.fontWeight)) {
+                        withStyle(
+                            SpanStyle(
+                                color = MaterialTheme.colorScheme.primary,
+                                fontSize = 20.sp,
+                                fontWeight = MaterialTheme.typography.titleMedium.fontWeight
+                            )
+                        ) {
                             append(candidate.name)
                         }
-                        append(" '")
+                        append(" '?")
                     }
                 )
-
             },
             confirmButton = {
                 TextButton(onClick = {
-                    db.collection("polls").document(pollId)
-                        .collection("candidates").document(candidate.id)
-                        .delete()
-                        .addOnSuccessListener {
-                            Toast.makeText(context, "Candidate deleted", Toast.LENGTH_SHORT).show()
-                        }
-                        .addOnFailureListener { e ->
-                            Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
-                        }
+                    viewModel.deleteCandidate(
+                        context = context,
+                        db = db,
+                        pollId = pollId,
+                        candidateId = candidate.id,
+                        candidateName = candidate.name
+                    )
                     selectedCandidateForDelete = null
                 }) {
                     Text("Delete", color = MaterialTheme.colorScheme.error)

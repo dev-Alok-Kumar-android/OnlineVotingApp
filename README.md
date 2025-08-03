@@ -165,7 +165,8 @@ com.alokkumar.onlinevotingapp
 1. Clone the repo:
    ```bash
    git clone https://github.com/your-username/online-voting-app.git
-   cd online-voting-app
+   cd online-voting-app 
+   ```
 
 2. Connect to Firebase:
   Download google-services.json from Firebase Console
@@ -175,11 +176,11 @@ com.alokkumar.onlinevotingapp
   - Connect emulator or device
   - Click ▶️ Run in Android Studio
 
-### TODO (Future Enhancements)
+### ✅ TODO (Future Enhancements)
 
-  - [] 🔐 Admin analytics dashboard
-  - [] 📈 Voting stats chart
-  - [] 🌐 Multi-language support
+- [ ] 🔐 Admin analytics dashboard
+- [ ] 📈 Voting stats chart
+- [ ] 🌐 Multi-language support
 
 ### 📫 Contact
   Feel free to reach out via:
