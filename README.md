@@ -77,6 +77,79 @@ An Android application for secure and easy online voting. Built with **Jetpack C
 
 ---
 
+## 📂 File Structure
+
+```
+com.alokkumar.onlinevotingapp
+│
+├── AppNavigation.kt              # App navigation controller
+├── MainActivity.kt               # Entry point for the app
+│
+├── model                         # Data models
+│   ├── Candidate.kt
+│   ├── Poll.kt
+│   ├── PollDocument.kt
+│   ├── UserModel.kt
+│   └── VoteModel.kt
+│
+├── ui                            # UI components and screens
+│   ├── screens
+│   │   ├── admin                 # Admin-specific screens
+│   │   │   ├── AdminHomeScreen.kt
+│   │   │   ├── ManagePollScreen.kt
+│   │   │   ├── ManageVoterScreen.kt
+│   │   │   ├── MonitorVotesScreen.kt
+│   │   │   ├── ViewStatsScreen.kt
+│   │   │   └── polls             # Subscreens for poll management
+│   │   │       ├── AddOrEditCandidateScreen.kt
+│   │   │       ├── AddOrEditPollScreen.kt
+│   │   │       ├── PollResultScreen.kt
+│   │   │       └── VoteDetailScreen.kt
+│   │   │
+│   │   ├── auth                  # Authentication screens
+│   │   │   ├── AdminLoginScreen.kt
+│   │   │   ├── AuthScreen.kt
+│   │   │   ├── UserLoginScreen.kt
+│   │   │   └── UserRegistrationScreen.kt
+│   │   │
+│   │   ├── common                # Shared UI components
+│   │   │   └── CandidateListSection.kt
+│   │   │
+│   │   └── user                  # Voter/user-specific screens
+│   │       ├── PollActionsScreen.kt
+│   │       ├── PollResultScreen.kt
+│   │       ├── UserHomeScreen.kt
+│   │       └── VoteScreen.kt
+│   │
+│   └── theme                     # UI theming
+│       ├── Color.kt
+│       ├── Theme.kt
+│       └── Type.kt
+│
+└── viewmodel                     # ViewModels following MVVM
+├── admin
+│   ├── ManagePollViewModel.kt
+│   ├── MonitorVotesViewModel.kt
+│   ├── ViewStatsViewModel.kt
+│   └── polls
+│       ├── AddOrEditCandidateViewModel.kt
+│       ├── AddOrEditPollViewModel.kt
+│       └── PollResultViewModel.kt
+│
+├── auth
+│   ├── AuthViewModel.kt
+│   └── SessionViewModel.kt
+│
+├── common
+│   └── CandidateListViewModel.kt
+│
+└── user
+├── PollResultViewModel.kt
+├── UsersViewModel.kt
+└── VoteViewModel.kt
+```
+
+---
 
 ## 🚀 Getting Started
 
