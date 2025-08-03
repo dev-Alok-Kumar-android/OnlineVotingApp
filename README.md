@@ -177,9 +177,9 @@ com.alokkumar.onlinevotingapp
 
 ### TODO (Future Enhancements)
 
-  - 🔐 Admin analytics dashboard
-  - 📈 Voting stats chart
-  - 🌐 Multi-language support
+  - [] 🔐 Admin analytics dashboard
+  - [] 📈 Voting stats chart
+  - [] 🌐 Multi-language support
 
 ### 📫 Contact
   Feel free to reach out via:
