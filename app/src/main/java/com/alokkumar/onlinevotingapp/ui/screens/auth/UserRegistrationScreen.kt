@@ -38,7 +38,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.alokkumar.onlinevotingapp.Routes
-import com.alokkumar.onlinevotingapp.viewmodel.AuthViewModel
+import com.alokkumar.onlinevotingapp.viewmodel.auth.AuthViewModel
 
 @Composable
 fun UserRegistrationScreen(modifier: Modifier = Modifier,navController: NavController, authViewModel: AuthViewModel = viewModel() ) {
@@ -74,7 +74,7 @@ fun UserRegistrationScreen(modifier: Modifier = Modifier,navController: NavContr
         OutlinedTextField(
             value = name,
             onValueChange = { name = it },
-            label = { Text("Full name") },
+            label = { Text("Full voterName") },
             modifier = Modifier.fillMaxWidth(),
             maxLines = 1,
             keyboardOptions = KeyboardOptions(
@@ -168,6 +168,9 @@ fun UserRegistrationScreen(modifier: Modifier = Modifier,navController: NavContr
                         navController.navigate(Routes.USER_HOME) {
                             popUpTo(Routes.AUTH) { inclusive = true }
                         }
+                    }
+                    authViewModel.signupError.value?.let {
+                        Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
                     }
                 }
             }

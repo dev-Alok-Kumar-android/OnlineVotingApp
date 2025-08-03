@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.alokkumar.onlinevotingapp.Routes
 import com.alokkumar.onlinevotingapp.model.Candidate
+import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
@@ -142,8 +143,12 @@ fun CandidateListSection(
 @Composable
 private fun CandidateListSectionPreview() {
     val candidates = listOf(
-        Candidate("1", "John Doe", "ABC Party", "Sample Agenda"),
-        Candidate("2", "Jane Smith", "XYZ Party", "Another Agenda")
+        Candidate("1", "John Doe", "ABC Party",
+            timestamp = Timestamp.now(),
+            agenda = "Sample Agenda"
+        ),
+        Candidate("2", "Jane Smith", "XYZ Party",
+            timestamp = Timestamp.now(), agenda = "Another Agenda")
     )
     CandidateListSection(candidates, "123",
         navController= NavController(LocalContext.current),

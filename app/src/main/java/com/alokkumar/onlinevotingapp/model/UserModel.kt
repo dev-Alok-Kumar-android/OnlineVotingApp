@@ -7,7 +7,7 @@ data class UserModel(
     val name: String = "",
     val email: String = "",
     val phone: String = "",
-    val isVerified: Boolean = false,
-    val isDeleted: Boolean = false,
+    val verified: Boolean = false,
+    val deleted: Boolean = false,
     val createdAt: Timestamp = Timestamp.now()
 )

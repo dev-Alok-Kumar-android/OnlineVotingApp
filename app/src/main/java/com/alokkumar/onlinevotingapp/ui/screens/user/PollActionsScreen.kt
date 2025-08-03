@@ -44,7 +44,7 @@ fun PollActionsScreen(navController: NavController, pollId: String) {
     val db = FirebaseFirestore.getInstance()
     var pollTitle by remember { mutableStateOf("Selected Poll") }
 
-    // Fetch poll title from Firestore
+    // Fetch polls title from Firestore
     LaunchedEffect(pollId) {
         db.collection("polls").document(pollId)
             .get()

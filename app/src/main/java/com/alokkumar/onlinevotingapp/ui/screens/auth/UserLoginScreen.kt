@@ -43,7 +43,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.alokkumar.onlinevotingapp.R
 import com.alokkumar.onlinevotingapp.Routes
-import com.alokkumar.onlinevotingapp.viewmodel.AuthViewModel
+import com.alokkumar.onlinevotingapp.viewmodel.auth.AuthViewModel
 
 @Composable
 fun UserLoginScreen(modifier: Modifier = Modifier, navController: NavController,
@@ -145,12 +145,16 @@ fun UserLoginScreen(modifier: Modifier = Modifier, navController: NavController,
         Button(onClick = {
             if (email.isBlank() || password.isBlank()) {
                 Toast.makeText(context, "Fill in all fields", Toast.LENGTH_SHORT).show()
+                return@Button
             } else {
                 authViewModel.login(email.trim(), password) {
                     Toast.makeText(context, "Login successful", Toast.LENGTH_SHORT).show()
                     navController.navigate(Routes.USER_HOME) {
                         popUpTo(Routes.AUTH) { inclusive = true }
                     }
+                }
+                authViewModel.loginError.value?.let {
+                    Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
                 }
             }
         },

@@ -137,36 +137,53 @@ fun AdminLoginScreen(modifier: Modifier = Modifier, navController: NavController
 
         Button(
             onClick = {
-                isLoading = true
+                if (email.isBlank() || password.isBlank()) {
+                    Toast.makeText(context, "Fill in all fields", Toast.LENGTH_SHORT).show()
+                    return@Button
+                } else {
+                    isLoading = true
 
-                auth.signInWithEmailAndPassword(email.trim(), password)
-                    .addOnSuccessListener { result ->
-                        val uid = result.user?.uid ?: return@addOnSuccessListener
+                    auth.signInWithEmailAndPassword(email.trim(), password)
+                        .addOnSuccessListener { result ->
+                            val uid = result.user?.uid ?: return@addOnSuccessListener
 
-                        // Check if user is admin
-                        db.collection("admins")
-                            .document(uid)
-                            .get()
-                            .addOnSuccessListener { document ->
-                                isLoading = false
-                                if (document.exists()) {
-                                    navController.navigate(Routes.ADMIN_HOME) {
-                                        popUpTo(Routes.AUTH) { inclusive = true }
+                            // Check if user is admin
+                            db.collection("admins")
+                                .document(uid)
+                                .get()
+                                .addOnSuccessListener { document ->
+                                    isLoading = false
+                                    if (document.exists()) {
+                                        navController.navigate(Routes.ADMIN_HOME) {
+                                            popUpTo(Routes.AUTH) { inclusive = true }
+                                        }
+                                    } else {
+                                        auth.signOut()
+                                        Toast.makeText(
+                                            context,
+                                            "Not authorized as admin",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
                                     }
-                                } else {
-                                    auth.signOut()
-                                    Toast.makeText(context, "Not authorized as admin", Toast.LENGTH_SHORT).show()
                                 }
-                            }
-                            .addOnFailureListener {
-                                isLoading = false
-                                Toast.makeText(context, "Error verifying admin", Toast.LENGTH_SHORT).show()
-                            }
-                    }
-                    .addOnFailureListener { e ->
-                        isLoading = false
-                        Toast.makeText(context, "Login failed: ${e.message}", Toast.LENGTH_SHORT).show()
-                    }
+                                .addOnFailureListener {
+                                    isLoading = false
+                                    Toast.makeText(
+                                        context,
+                                        "Error verifying admin",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                        }
+                        .addOnFailureListener { e ->
+                            isLoading = false
+                            Toast.makeText(
+                                context,
+                                "Login failed: ${e.message}",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                }
             },
             modifier = Modifier
                 .fillMaxWidth()

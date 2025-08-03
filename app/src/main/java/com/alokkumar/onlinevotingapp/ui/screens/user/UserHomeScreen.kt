@@ -54,7 +54,6 @@ fun UserHomeScreen(navController: NavController) {
     val polls = remember { mutableStateListOf<Poll>() }
     var userName by remember { mutableStateOf("") }
 
-    // Fetch user name once
     LaunchedEffect(Unit) {
         val uid = auth.currentUser?.uid
         if (uid != null) {
@@ -128,6 +127,7 @@ fun UserHomeScreen(navController: NavController) {
     ){
         Column(
             modifier = Modifier
+                .padding(16.dp)
                 .fillMaxSize()
                 .padding(it)
         ){
