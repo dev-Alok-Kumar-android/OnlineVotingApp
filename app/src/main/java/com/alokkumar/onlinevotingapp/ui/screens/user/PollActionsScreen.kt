@@ -14,10 +14,17 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -26,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -39,46 +47,83 @@ import com.alokkumar.onlinevotingapp.R
 import com.google.firebase.firestore.FirebaseFirestore
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PollActionsScreen(navController: NavController, pollId: String) {
     val db = FirebaseFirestore.getInstance()
-    var pollTitle by remember { mutableStateOf("Selected Poll") }
+    var pollModelTitle by remember { mutableStateOf("Selected PollModel") }
+    var pollModelDescription by remember { mutableStateOf("...") }
 
     // Fetch polls title from Firestore
     LaunchedEffect(pollId) {
         db.collection("polls").document(pollId)
             .get()
             .addOnSuccessListener { doc ->
-                pollTitle = doc.getString("title") ?: "Poll"
+                pollModelTitle = doc.getString("title") ?: "PollModel"
+                pollModelDescription = doc.getString("description") ?: "Description"
+            }
+            .addOnFailureListener {e->
+                e.printStackTrace()
             }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(text = pollTitle,
-            style = TextStyle(
-                fontSize = 40.sp,
-                fontFamily = FontFamily.Cursive,
-                fontWeight = FontWeight.SemiBold,
-                textAlign = TextAlign.Center
-            ),
 
-        )
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        UserMenuItem(title = "Vote", iconRes = R.drawable.baseline_how_to_vote_24) {
-            navController.navigate("vote_screen/$pollId")
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(text = "Poll Actions")
+                },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                }
+            )
         }
+    ) { innerPadding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(modifier = Modifier.height(32.dp))
+                Text(
+                    text = pollModelTitle,
+                    style = TextStyle(
+                        fontSize = 40.sp,
+                        fontFamily = FontFamily.Cursive,
+                        fontWeight = FontWeight.SemiBold
+                    ))
+                Spacer(modifier = Modifier.height(32.dp))
+                Text(
+                    text = pollModelDescription,
+                    style = TextStyle(
+                        fontSize = 18.sp
+                    ),
+                    modifier = Modifier.alpha(0.7f)
+                )
+
+                Column (
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .fillMaxSize(),
+                    verticalArrangement = Arrangement.Bottom,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                UserMenuItem(title = "Vote", iconRes = R.drawable.baseline_how_to_vote_24) {
+                    navController.navigate("vote_screen/$pollId")
+                }
 
 
-        UserMenuItem(title = "View Result", iconRes = R.drawable.outline_groups_24) {
-            navController.navigate("result_screen/$pollId")
+                UserMenuItem(title = "View Result", iconRes = R.drawable.outline_groups_24) {
+                    navController.navigate("result_screen/$pollId")
+                }
+            }
         }
     }
 }

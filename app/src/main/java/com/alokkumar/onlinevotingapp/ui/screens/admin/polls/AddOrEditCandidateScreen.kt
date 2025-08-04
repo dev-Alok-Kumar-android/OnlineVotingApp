@@ -58,7 +58,7 @@ fun AddOrEditCandidateScreen(
         )
 
         OutlinedTextField(
-            value = state.name,
+            value = state.candidateName,
             onValueChange = viewModel::onNameChange,
             label = { Text("Candidate Name") },
             singleLine = true,

@@ -10,8 +10,8 @@ import com.google.firebase.ktx.Firebase
 class SessionViewModel : ViewModel() {
     private val auth = Firebase.auth
 
-    val isLoggedIn = mutableStateOf(false)
-    val email = mutableStateOf("")
+    val isLoggedIn = mutableStateOf(Firebase.auth.currentUser != null)
+    val email = mutableStateOf(Firebase.auth.currentUser?.email ?: "")
 
     private val authStateListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
         val user = firebaseAuth.currentUser

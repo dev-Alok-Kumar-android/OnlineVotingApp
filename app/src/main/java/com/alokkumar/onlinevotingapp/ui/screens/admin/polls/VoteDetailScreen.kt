@@ -1,5 +1,6 @@
 package com.alokkumar.onlinevotingapp.ui.screens.admin.polls
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,14 +11,23 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -31,7 +41,10 @@ fun VoteDetailScreen(
     modifier: Modifier = Modifier
 ) {
     val viewModel: MonitorVotesViewModel = viewModel()
-    val vote = viewModel.getVoteById(voteId)
+    val votes by viewModel.votes.collectAsState()
+    val vote = votes.find { it.voteId == voteId }
+    val context = LocalContext.current
+    var delete by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -44,19 +57,9 @@ fun VoteDetailScreen(
                 },
                 actions = {
                     IconButton(onClick = {
-                        viewModel.deleteVote(voteId,
-                            onSuccess = { navController.popBackStack() },
-                            onError = {
-
-                            }
-                        )
+                        delete = true
                     }) {
                         Icon(Icons.Default.Delete, contentDescription = "Delete")
-                    }
-                    IconButton(onClick = {
-                        // You can implement edit screen later
-                    }) {
-                        Icon(Icons.Default.Edit, contentDescription = "Edit")
                     }
                     IconButton(onClick = {
 
@@ -81,11 +84,41 @@ fun VoteDetailScreen(
             Spacer(modifier = Modifier.height(8.dp))
             Text("Candidate Name: ${vote?.candidateName}")
             Spacer(modifier = Modifier.height(8.dp))
-            Text("Poll ID: ${vote?.pollId}")
-            Spacer(modifier = Modifier.height(8.dp))
-            Text("Vote Time: ${viewModel.formatTime(vote?.voteTime)}")
+            Text("Vote Time: ${viewModel.formatTime(vote?.timestamp)}")
             Spacer(modifier = Modifier.height(8.dp))
             Text("Vote ID: ${vote?.voteId}")
+            Spacer(modifier = Modifier.height(8.dp))
+            Text("PollModel ID: ${vote?.pollId}")
         }
     }
+
+    if (delete) {
+       AlertDialog(
+           onDismissRequest = {
+               delete = false
+           },
+           title = { Text("Delete Vote") },
+           text = { Text("Are you sure you want to delete this vote?") },
+           confirmButton = {
+               TextButton(onClick = {
+                   viewModel.deleteVote(voteId, onSuccess = {
+                       Toast.makeText(context, "Vote deleted", Toast.LENGTH_SHORT).show()
+                       navController.popBackStack()
+                   }, onError = {
+                       Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                       delete = false
+                   })
+               }) {
+                   Text("Delete", color = MaterialTheme.colorScheme.error)
+               }
+           },
+           dismissButton = {
+               TextButton(onClick = {
+                   delete = false
+               }) {
+                   Text("Cancel")
+               }
+           }
+       )
+   }
 }

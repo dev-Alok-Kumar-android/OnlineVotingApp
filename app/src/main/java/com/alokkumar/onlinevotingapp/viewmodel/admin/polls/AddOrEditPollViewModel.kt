@@ -10,6 +10,7 @@ import androidx.lifecycle.ViewModel
 import com.alokkumar.onlinevotingapp.model.Candidate
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.firestore
 
@@ -54,7 +55,7 @@ class AddOrEditPollViewModel : ViewModel() {
                     for (doc in it.documents) {
                         val candidate = Candidate(
                             id = doc.id,
-                            name = doc.getString("voterName") ?: "",
+                            candidateName = doc.getString("candidateName") ?: "",
                             party = doc.getString("party") ?: "",
                             agenda = doc.getString("agenda") ?: "",
                             timestamp = doc.getTimestamp("timestamp") ?: Timestamp.now()
@@ -81,7 +82,7 @@ class AddOrEditPollViewModel : ViewModel() {
         if (pollId != null) {
             db.collection("polls").document(pollId).update(data)
                 .addOnSuccessListener {
-                    Toast.makeText(context, "Poll updated", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "PollModel updated", Toast.LENGTH_SHORT).show()
                     onSuccess()
                 }
                 .addOnFailureListener {
@@ -93,7 +94,7 @@ class AddOrEditPollViewModel : ViewModel() {
         } else {
             db.collection("polls").add(data)
                 .addOnSuccessListener {
-                    Toast.makeText(context, "Poll added", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "PollModel added", Toast.LENGTH_SHORT).show()
                     onSuccess()
                 }
                 .addOnFailureListener {
@@ -104,6 +105,56 @@ class AddOrEditPollViewModel : ViewModel() {
                 }
         }
     }
+
+    fun deleteCandidate(
+        context: Context,
+        db: FirebaseFirestore,
+        pollId: String,
+        candidateId: String,
+        candidateName: String,
+        onSuccess: () -> Unit = {},
+        onError: (Exception) -> Unit = {}
+    ) {
+        val candidateRef = db.collection("polls")
+            .document(pollId)
+            .collection("candidates")
+            .document(candidateId)
+
+        // Step 1: Delete associated votes
+        db.collection("votes")
+            .whereEqualTo("pollId", pollId)
+            .whereEqualTo("candidateId", candidateId)
+            .get()
+            .addOnSuccessListener { voteSnapshots ->
+                val batch = db.batch()
+
+                voteSnapshots.documents.forEach { voteDoc ->
+                    batch.delete(voteDoc.reference)
+                }
+
+                // Step 2: Delete the candidate
+                batch.delete(candidateRef)
+
+                batch.commit()
+                    .addOnSuccessListener {
+                        Toast.makeText(
+                            context,
+                            "Candidate '$candidateName' and related votes deleted",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        onSuccess()
+                    }
+                    .addOnFailureListener { e ->
+                        Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                        onError(e)
+                    }
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(context, "Error fetching votes: ${e.message}", Toast.LENGTH_SHORT).show()
+                onError(e)
+            }
+    }
+
 
     override fun onCleared() {
         pollListener?.remove()

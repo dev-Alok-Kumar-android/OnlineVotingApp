@@ -25,6 +25,7 @@ import com.alokkumar.onlinevotingapp.ui.screens.auth.UserRegistrationScreen
 import com.alokkumar.onlinevotingapp.ui.screens.user.PollActionsScreen
 import com.alokkumar.onlinevotingapp.ui.screens.user.PollResultScreen
 import com.alokkumar.onlinevotingapp.ui.screens.user.UserHomeScreen
+import com.alokkumar.onlinevotingapp.ui.screens.user.UserProfileScreen
 import com.alokkumar.onlinevotingapp.ui.screens.user.VoteScreen
 import com.alokkumar.onlinevotingapp.viewmodel.auth.SessionViewModel
 
@@ -43,8 +44,8 @@ fun AppNavigation(modifier: Modifier = Modifier,  sessionViewModel: SessionViewM
 
     NavHost(
         navController = navController,
-        startDestination = startDestination
-//        startDestination = Routes.ADMIN_HOME
+//        startDestination = startDestination
+        startDestination = Routes.ADMIN_HOME
     ) {
         // 🔐 Auth Screens
         composable(Routes.AUTH) { AuthScreen(modifier, navController) }
@@ -60,7 +61,7 @@ fun AppNavigation(modifier: Modifier = Modifier,  sessionViewModel: SessionViewM
         composable(Routes.MANAGE_POLLS) { ManagePollScreen(navController) }
         composable(Routes.MONITOR_VOTES) { MonitorVotesScreen(navController) }
 
-        // Poll/Vote Screens
+        // PollModel/Vote Screens
         composable("${Routes.POLL_RESULT}/{pollId}") { backStackEntry ->
             val pollId = backStackEntry.arguments?.getString("pollId") ?: ""
             PollResultScreen(navController, pollId)
@@ -88,8 +89,13 @@ fun AppNavigation(modifier: Modifier = Modifier,  sessionViewModel: SessionViewM
 
         // 🙋‍♂️ User Screens
         composable(Routes.USER_HOME) { UserHomeScreen(navController) }
-        composable(
-            "${Routes.POLL_ACTIONS}/{pollId}",
+        composable("${ Routes.USER_PROFILE }/{userId}",
+            arguments = listOf(navArgument("userId") { type = NavType.StringType })
+        ) {
+            val userId = it.arguments?.getString("userId") ?: ""
+            UserProfileScreen(navController=navController, userId = userId)
+        }
+        composable("${Routes.POLL_ACTIONS}/{pollId}",
             arguments = listOf(navArgument("pollId") { type = NavType.StringType })
         ) {
             val pollId = it.arguments?.getString("pollId") ?: ""
@@ -100,7 +106,7 @@ fun AppNavigation(modifier: Modifier = Modifier,  sessionViewModel: SessionViewM
             arguments = listOf(navArgument("pollId") { type = NavType.StringType })
         ) {
             val pollId = it.arguments?.getString("pollId") ?: ""
-            VoteScreen(navController, pollId)
+            VoteScreen(pollId, navController = navController)
         }
         composable(
             "${Routes.RESULT_SCREEN}/{pollId}",
@@ -132,6 +138,7 @@ object Routes {
     const val VOTE_DETAIL = "vote_detail"
 
     const val USER_HOME = "user_home"
+    const val USER_PROFILE = "user_profile"
     const val POLL_ACTIONS = "poll_actions"
     const val VOTE_SCREEN = "vote_screen"
     const val RESULT_SCREEN = "result_screen"

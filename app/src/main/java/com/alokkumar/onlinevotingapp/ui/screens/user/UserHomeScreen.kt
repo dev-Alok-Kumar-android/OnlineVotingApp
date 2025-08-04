@@ -1,5 +1,6 @@
 package com.alokkumar.onlinevotingapp.ui.screens.user
 
+import android.widget.Button
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -14,13 +15,19 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SearchBar
+import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -39,11 +46,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.alokkumar.onlinevotingapp.model.Poll
+import com.alokkumar.onlinevotingapp.Routes
+import com.alokkumar.onlinevotingapp.model.PollModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.firestore
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserHomeScreen(navController: NavController) {
     val context = LocalContext.current
@@ -51,8 +60,27 @@ fun UserHomeScreen(navController: NavController) {
     val auth = FirebaseAuth.getInstance()
 
     var showLogoutDialog by remember { mutableStateOf(false) }
-    val polls = remember { mutableStateListOf<Poll>() }
+    val pollModels = remember { mutableStateListOf<PollModel>() }
     var userName by remember { mutableStateOf("") }
+
+
+    var searchQuery by remember { mutableStateOf("") }
+    val onActiveChange: (Boolean) -> Unit = { isActive ->
+        if (!isActive) {
+            searchQuery = ""
+        }
+    }
+    val filteredPolls = remember(searchQuery, pollModels) {
+        if (searchQuery.isBlank()) {
+            pollModels
+        } else {
+            pollModels.filter {
+                it.title.contains(searchQuery, ignoreCase = true) ||
+                        it.description.contains(searchQuery, ignoreCase = true)
+            }
+        }
+    }
+    val active = searchQuery.isNotBlank()
 
     LaunchedEffect(Unit) {
         val uid = auth.currentUser?.uid
@@ -64,22 +92,21 @@ fun UserHomeScreen(navController: NavController) {
         }
     }
 
-    // Real-time listener for polls with cleanup
     DisposableEffect(Unit) {
         val listenerRegistration = db.collection("polls")
             .addSnapshotListener { snapshot, error ->
                 if (error != null || snapshot == null) return@addSnapshotListener
 
-                val updatedPolls = snapshot.documents.map { doc ->
-                    Poll(
+                val updatedPollModels = snapshot.documents.map { doc ->
+                    PollModel(
                         id = doc.id,
                         title = doc.getString("title") ?: "Untitled",
                         description = doc.getString("description") ?: ""
                     )
                 }
 
-                polls.clear()
-                polls.addAll(updatedPolls)
+                pollModels.clear()
+                pollModels.addAll(updatedPollModels)
             }
 
         onDispose {
@@ -102,35 +129,43 @@ fun UserHomeScreen(navController: NavController) {
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Column {
+                    Column(
+                        Modifier.clickable(
+                            onClick = {
+                                if (auth.currentUser != null)
+                                    navController.navigate("${Routes.USER_PROFILE}/${auth.currentUser?.uid}")
+                            }
+                        )
+                    ) {
                         Text(
                             text = "Welcome",
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                         Text(
-                            text = "    "+userName.ifBlank { " - User" },
+                            text = "    " + userName.ifBlank { " - User" },
                             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
                         )
                     }
 
                     IconButton(onClick = { showLogoutDialog = true }) {
-                        Icon(Icons.AutoMirrored.Filled.ExitToApp,
+                        Icon(
+                            Icons.AutoMirrored.Filled.ExitToApp,
                             contentDescription = "Logout",
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer)
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
                     }
                 }
             }
         }
 
-    ){
+    ) { it ->
         Column(
             modifier = Modifier
-                .padding(16.dp)
                 .fillMaxSize()
                 .padding(it)
-        ){
+        ) {
 
             if (showLogoutDialog) {
                 AlertDialog(
@@ -157,14 +192,72 @@ fun UserHomeScreen(navController: NavController) {
                 )
 
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text("Available Polls", style = MaterialTheme.typography.titleLarge)
+            SearchBar(
+                inputField = {
+                    SearchBarDefaults.InputField(
+                        query = searchQuery,
+                        onQueryChange = { searchQuery = it },
+                        onSearch = { /* handle search if needed */ },
+                        expanded = active,
+                        onExpandedChange = onActiveChange,
+                        placeholder = { Text("Search polls...") },
+                        leadingIcon = {
+                            Icon(Icons.Default.Search, contentDescription = "Search")
+                        },
+                        trailingIcon = {
+                            if (searchQuery.isNotEmpty()) {
+                                IconButton(onClick = { searchQuery = "" }) {
+                                    Icon(Icons.Default.Close, contentDescription = "Clear")
+                                }
+                            }
+                        }
+                    )
+                },
+                expanded = active,
+                onExpandedChange = onActiveChange,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                shape = SearchBarDefaults.inputFieldShape,
+                tonalElevation = SearchBarDefaults.TonalElevation,
+                shadowElevation = SearchBarDefaults.ShadowElevation,
+                windowInsets = SearchBarDefaults.windowInsets,
+                content = {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 8.dp)
+                    ) {
+                        items(filteredPolls) { poll ->
+                            Card(
+                                modifier = Modifier
+                                    .clickable {
+                                        navController.navigate("poll_actions/${poll.id}")
+                                    }
+                                    .fillMaxWidth()
+                                    .padding(vertical = 6.dp),
+                                elevation = CardDefaults.cardElevation(4.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp)
+                                ) {
+                                    Text(poll.title, style = MaterialTheme.typography.titleLarge)
+                                    Text(
+                                        poll.description,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        modifier = Modifier.alpha(0.7f)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                },
+            )
             Spacer(modifier = Modifier.height(8.dp))
-
-            LazyColumn {
-                items(polls) { poll ->
+            LazyColumn(Modifier.padding(horizontal = 16.dp)) {
+                items(pollModels) { poll ->
                     Card(
                         modifier = Modifier
                             .clickable {
@@ -179,17 +272,40 @@ fun UserHomeScreen(navController: NavController) {
                                 .fillMaxWidth()
                                 .padding(12.dp)
                         ) {
-                            Text(poll.title, style = MaterialTheme.typography.titleLarge)
+                            Text(poll.title, style = MaterialTheme.typography.titleLarge,maxLines = 1)
                             Text(
                                 poll.description,
                                 style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier.alpha(0.7f)
+                                modifier = Modifier.alpha(0.7f),
+                                maxLines = 2
                             )
+                        }
+                        Row (
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
+
+                        ) {
+                            Button(
+                                onClick = {
+                                    navController.navigate("vote_screen/${poll.id}")
+                                },
+                                modifier = Modifier.padding(8.dp)
+                            ) {
+                                Text("Vote")
+                            }
+                            Button(
+                                onClick = {
+                                    navController.navigate("result_screen/${poll.id}")
+                                },
+                                modifier = Modifier.padding(8.dp)
+                            ) {
+                                Text("Results")
+                            }
                         }
                     }
                 }
             }
         }
     }
-
 }

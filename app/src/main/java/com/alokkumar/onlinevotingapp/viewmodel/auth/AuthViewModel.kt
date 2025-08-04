@@ -1,5 +1,6 @@
 package com.alokkumar.onlinevotingapp.viewmodel.auth
 
+import android.util.Log
 import android.util.Patterns
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -23,33 +24,37 @@ class AuthViewModel : ViewModel() {
     val signupError = mutableStateOf<String?>(null)
 
     init {
-        Firebase.auth.addAuthStateListener {
-            isLoggedIn.value = it.currentUser != null
-            currentUserEmail.value = it.currentUser?.email ?: ""
+        Firebase.auth.addAuthStateListener { firebaseAuth ->
+            val user = firebaseAuth.currentUser
+            isLoggedIn.value = user != null
+            currentUserEmail.value = user?.email ?: ""
+            Log.d("AuthState", "User logged in: ${user != null}, UID: ${user?.uid}")
         }
     }
 
-    fun login(email: String, password: String, onSuccess: () -> Unit) = viewModelScope.launch {
-        loginLoading.value = true
-        loginError.value = null
-        try {
-            auth.signInWithEmailAndPassword(email, password).await()
-            val user = auth.currentUser ?: throw Exception("User not found")
-            val doc = fireStore.collection("users").document(user.uid).get().await()
-            if (!doc.exists()) throw Exception("User record missing")
-            val isVerified = doc.getBoolean("verified") ?: false
-            val isDeleted = doc.getBoolean("deleted") ?: false
-            when {
-                !isVerified -> throw Exception("Account not verified")
-                isDeleted -> throw Exception("Account deleted")
-                else -> onSuccess()
+    fun login(email: String, password: String, onSuccess: () -> Unit) = viewModelScope
+        .launch {
+            loginLoading.value = true
+            loginError.value = null
+            try {
+                auth.signInWithEmailAndPassword(email, password).await()
+                val user = auth.currentUser ?: throw Exception("User not found")
+                val doc = fireStore.collection("users")
+                    .document(user.uid).get().await()
+                if (!doc.exists()) throw Exception("User record missing")
+                val isVerified = doc.getBoolean("verified") ?: false
+                val isDeleted = doc.getBoolean("deleted") ?: false
+                when {
+                    !isVerified -> throw Exception("Account not verified")
+                    isDeleted -> throw Exception("Account deleted")
+                    else -> onSuccess()
+                }
+            } catch (e: Exception) {
+                loginError.value = e.localizedMessage
+            } finally {
+                loginLoading.value = false
             }
-        } catch (e: Exception) {
-            loginError.value = e.localizedMessage
-        } finally {
-            loginLoading.value = false
         }
-    }
 
     fun signup(
         name: String,

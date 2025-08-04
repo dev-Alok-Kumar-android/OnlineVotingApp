@@ -87,7 +87,7 @@ com.alokkumar.onlinevotingapp
 │
 ├── model                         # Data models
 │   ├── Candidate.kt
-│   ├── Poll.kt
+│   ├── PollModel.kt
 │   ├── PollDocument.kt
 │   ├── UserModel.kt
 │   └── VoteModel.kt

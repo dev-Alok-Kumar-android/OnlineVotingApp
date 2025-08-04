@@ -7,8 +7,9 @@ data class VoteModel(
     val voteId: String = "",
     val voterName: String = "",
     val candidateName: String = "",
+    val candidateId: String = "",
     val userId: String = "",
     val pollId: String = "",
     val pollTitle: String = "",
-    val voteTime: Date? = Timestamp.now().toDate()
+    val timestamp: Date? = Timestamp.now().toDate()
 )

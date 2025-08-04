@@ -19,7 +19,7 @@ class AddOrEditCandidateViewModel : ViewModel() {
     private val _state = MutableStateFlow(Candidate())
     val state: StateFlow<Candidate> = _state
 
-    fun onNameChange(value: String) = _state.update { it.copy(name = value) }
+    fun onNameChange(value: String) = _state.update { it.copy(candidateName = value) }
     fun onPartyChange(value: String) = _state.update { it.copy(party = value) }
     fun onAgendaChange(value: String) = _state.update { it.copy(agenda = value) }
 
@@ -32,14 +32,14 @@ class AddOrEditCandidateViewModel : ViewModel() {
 
                 _state.update {
                     it.copy(
-                        name = doc.getString("voterName") ?: "",
+                        candidateName = doc.getString("candidateName") ?: "",
                         party = doc.getString("party") ?: "",
                         agenda = doc.getString("agenda") ?: "",
                         votes = doc.getLong("votes")?.toInt() ?: 0
                     )
                 }
             } catch (e: Exception) {
-                // handle error externally via return or state if needed
+                e.printStackTrace()
             }
         }
     }
@@ -52,14 +52,14 @@ class AddOrEditCandidateViewModel : ViewModel() {
         onFailure: (String) -> Unit
     ) {
         val candidate = state.value
-        if (candidate.name.isBlank() || candidate.party.isBlank() || candidate.agenda.isBlank()) {
+        if (candidate.candidateName.isBlank() || candidate.party.isBlank() || candidate.agenda.isBlank()) {
             onFailure("Please fill in all fields")
             return
         }
         isSubmitting = true
 
         val candidateMap = hashMapOf(
-            "voterName" to candidate.name,
+            "candidateName" to candidate.candidateName,
             "party" to candidate.party,
             "agenda" to candidate.agenda,
             "votes" to candidate.votes

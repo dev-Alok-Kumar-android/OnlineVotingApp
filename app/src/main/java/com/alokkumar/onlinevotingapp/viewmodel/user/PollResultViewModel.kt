@@ -2,14 +2,11 @@ package com.alokkumar.onlinevotingapp.viewmodel.user
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.alokkumar.onlinevotingapp.model.Candidate
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 
 class PollResultViewModel : ViewModel() {
     private val db = FirebaseFirestore.getInstance()
@@ -25,43 +22,37 @@ class PollResultViewModel : ViewModel() {
         _isLoading.value = true
         listenerRegistration?.remove()
 
-        viewModelScope.launch {
-            try {
-                val candidateSnapshot = db.collection("polls")
-                    .document(pollId)
-                    .collection("candidates")
-                    .get().await()
-
-                val candidateList = candidateSnapshot.documents.mapNotNull {
-                    val id = it.id
-                    val name = it.getString("name") ?: return@mapNotNull null
-                    val party = it.getString("party") ?: "Independent"
-                    Triple(id, name, party)
+        listenerRegistration = db.collection("polls")
+            .document(pollId)
+            .collection("candidates")
+            .addSnapshotListener { snapshot, error ->
+                if (error != null || snapshot == null) {
+                    Log.e("PollResultVM", "Listen failed: ${error?.message}")
+                    _isLoading.value = false
+                    return@addSnapshotListener
                 }
 
-                listenerRegistration = db.collection("votes")
-                    .whereEqualTo("pollId", pollId)
-                    .addSnapshotListener { snapshot, error ->
-                        if (error != null || snapshot == null) return@addSnapshotListener
+                val candidates = snapshot.documents.mapNotNull { doc ->
+                    val name = doc.getString("candidateName")
+                    val party = doc.getString("party")
+                    val agenda = doc.getString("agenda")
+                    val id = doc.id
+                    val votes = doc.getLong("votes")?.toInt() ?: 0
 
-                        val voteCounts = snapshot.documents
-                            .mapNotNull { it.getString("candidateId") }
-                            .groupingBy { it }
-                            .eachCount()
+                    if (name != null && party != null) {
+                        Candidate(
+                            id = id,
+                            candidateName = name,
+                            party = party,
+                            agenda = agenda ?: "",
+                            votes = votes
+                        )
+                    } else null
+                }.sortedByDescending { it.votes }
 
-                        val liveResults = candidateList.map { (id, name, party) ->
-                            Candidate(name = name, party = party, votes = voteCounts[id] ?: 0)
-                        }.sortedByDescending { it.votes }
-
-                        _results.value = liveResults
-                        _isLoading.value = false
-                    }
-
-            } catch (e: Exception) {
-                Log.e("PollResultViewModel", "Error: ${e.message}", e)
+                _results.value = candidates
                 _isLoading.value = false
             }
-        }
     }
 
     override fun onCleared() {

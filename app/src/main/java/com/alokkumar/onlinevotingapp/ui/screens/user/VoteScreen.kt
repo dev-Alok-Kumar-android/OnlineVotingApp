@@ -10,11 +10,18 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -27,8 +34,9 @@ import androidx.navigation.NavController
 import com.alokkumar.onlinevotingapp.viewmodel.user.VoteViewModel
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun VoteScreen(navController: NavController, pollId: String, viewModel: VoteViewModel = viewModel()) {
+fun VoteScreen(pollId: String, viewModel: VoteViewModel = viewModel(), navController: NavController) {
     val context = LocalContext.current
 
     val candidates = viewModel.candidates
@@ -41,86 +49,100 @@ fun VoteScreen(navController: NavController, pollId: String, viewModel: VoteView
         viewModel.loadCandidates(pollId)
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Text("Vote", fontSize = 24.sp, modifier = Modifier.padding(bottom = 16.dp))
-
-        if (hasVoted) {
-            Text(
-                text = "You have already voted in this polls to $selectedCandidateName",
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(bottom = 16.dp)
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text("Vote", fontSize = 24.sp)
+                },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                }
             )
         }
-
-        if (candidates.isEmpty()) {
-            Text(
-                text = "No candidates found",
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-        }
-
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.weight(1f)
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp)
         ) {
-            items(candidates) { candidate ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp),
-                    elevation = CardDefaults.cardElevation(4.dp)
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text("Name: ${candidate.name}", fontSize = 18.sp)
-                        Text("Party: ${candidate.party}")
-                        Text("Agenda: ${candidate.agenda}")
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Button(
-                            onClick = {
-                                viewModel.selectedCandidateId = candidate.id
-                            },
-                            enabled = !hasVoted && selectedCandidateId != candidate.id
-                        ) {
-                            Text(
-                                if (selectedCandidateId == candidate.id)
-                                    "Selected"
-                                else "Select"
-                            )
+            if (hasVoted) {
+                Text(
+                    text = "You have already voted in this polls to $selectedCandidateName",
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+            }
+
+            if (candidates.isEmpty()) {
+                Text(
+                    text = "No candidates found",
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+            }
+
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.weight(1f)
+            ) {
+                items(candidates) { candidate ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        elevation = CardDefaults.cardElevation(4.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text("Name: ${candidate.candidateName}", fontSize = 18.sp)
+                            Text("Party: ${candidate.party}")
+                            Text("Agenda: ${candidate.agenda}")
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Button(
+                                onClick = {
+                                    viewModel.selectedCandidateId = candidate.id
+                                },
+                                enabled = !hasVoted && selectedCandidateId != candidate.id
+                            ) {
+                                Text(
+                                    if (selectedCandidateId == candidate.id)
+                                        "Selected"
+                                    else "Select"
+                                )
+                            }
                         }
                     }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        Button(
-            onClick = {
-                viewModel.submitVote(
-                    pollId = pollId,
-                    onSuccess = {
-                        Toast.makeText(context, "Vote submitted", Toast.LENGTH_SHORT).show()
-                    },
-                    onFailure = {
-                        Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            Button(
+                onClick = {
+                    viewModel.submitVote(
+                        pollId = pollId,
+                        onSuccess = {
+                            Toast.makeText(context, "Vote submitted", Toast.LENGTH_SHORT).show()
+                        },
+                        onFailure = {
+                            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                        }
+                    )
+                },
+                enabled = selectedCandidateId != null && !hasVoted && !isSubmitting,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            ) {
+                Text(
+                    when {
+                        isSubmitting -> "Submitting..."
+                        hasVoted -> "Voted"
+                        else -> "Submit Vote"
                     }
                 )
-            },
-            enabled = selectedCandidateId != null && !hasVoted && !isSubmitting,
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        ) {
-            Text(
-                when {
-                    isSubmitting -> "Submitting..."
-                    hasVoted -> "Voted"
-                    else -> "Submit Vote"
-                }
-            )
+            }
         }
     }
 }

@@ -1,7 +1,8 @@
 package com.alokkumar.onlinevotingapp.ui.screens.admin
 
-import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,63 +12,94 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.alokkumar.onlinevotingapp.Routes
 import com.alokkumar.onlinevotingapp.model.UserModel
 import com.alokkumar.onlinevotingapp.viewmodel.user.UsersViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ManageVoterScreen(
     navController: NavController,
-    usersViewModel: UsersViewModel = viewModel()
+    usersViewModel: UsersViewModel = viewModel(),
 ) {
     val voters by usersViewModel.users
-    val loadingIds = usersViewModel.loadingIds
+    val loadingIds = usersViewModel.loadingButtons
     val isLoading by usersViewModel.isLoading
     val errorMessage by usersViewModel.errorMessage
 
-    val context = LocalContext.current
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Text("Manage Voters", style = MaterialTheme.typography.headlineSmall)
-
-        if (errorMessage != null) {
-            LaunchedEffect(errorMessage) {
-                Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
-                usersViewModel.errorMessage.value = null
-            }
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Manage Voters", style = MaterialTheme.typography.headlineSmall) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                }
+            )
         }
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .padding(innerPadding)
+                .fillMaxSize()
+        ) {
+            when {
+                isLoading -> {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                }
 
-        Spacer(Modifier.height(12.dp))
+                errorMessage != null -> {
+                    Text(
+                        text = errorMessage ?: "",
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
 
-        if (isLoading) {
-            CircularProgressIndicator()
-        }
+                else -> {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp)
+                    ) {
 
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            items(voters) { user ->
-                val loading = user.uid in loadingIds
-                VoterCard(user, loading,
-                    onToggleVerify = { usersViewModel.toggleVerification(user) },
-                    onDelete = { usersViewModel.deleteUser(user) }
-                )
+                        Spacer(Modifier.height(12.dp))
+
+                        LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            items(voters) { user ->
+                                val loading = user.uid in loadingIds
+                                VoterCard(
+                                    user, loading,
+                                    onCardClick = { navController.navigate("${Routes.USER_PROFILE}/${user.uid}") },
+                                    onToggleVerify = { usersViewModel.toggleVerification(user) },
+                                    onToggleDelete = { usersViewModel.toggleDelete(user) }
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -78,11 +110,14 @@ fun ManageVoterScreen(
 fun VoterCard(
     user: UserModel,
     loading: Boolean,
+    onCardClick: () -> Unit = {},
     onToggleVerify: () -> Unit,
-    onDelete: () -> Unit
+    onToggleDelete: () -> Unit,
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onCardClick),
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -95,18 +130,31 @@ fun VoterCard(
                 Button(
                     onClick = onToggleVerify,
                     enabled = !loading,
+                    colors = if (user.verified)
+                        ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                    else
+                        ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text(if (loading) "Loading..." else if (user.verified) "Unverify" else "Verify")
+                    Text(
+                        text = if (loading) "Loading..." else if (user.verified) "Unverify" else "Verify",
+                        color = if (user.verified) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onPrimary
+                    )
                 }
 
                 Button(
-                    onClick = onDelete,
+                    onClick = onToggleDelete,
                     enabled = !loading,
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                    colors = if (user.deleted)
+                        ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+                    else
+                        ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text(if (loading) "Loading..." else "Delete")
+                    Text(
+                        text = if (loading) "Loading..." else if (user.deleted) "Retrieve" else "Delete",
+                        color = if (user.deleted) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onError
+                    )
                 }
             }
         }

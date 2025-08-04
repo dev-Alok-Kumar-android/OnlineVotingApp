@@ -1,12 +1,13 @@
 package com.alokkumar.onlinevotingapp.viewmodel.user
 
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.alokkumar.onlinevotingapp.model.Candidate
-import com.alokkumar.onlinevotingapp.model.Poll
+import com.alokkumar.onlinevotingapp.model.PollModel
 import com.alokkumar.onlinevotingapp.model.VoteModel
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
@@ -30,46 +31,59 @@ class VoteViewModel : ViewModel() {
     var hasVoted by mutableStateOf(false)
     var isSubmitting by mutableStateOf(false)
     private var voteDocId = ""
+    var currentPollModel by mutableStateOf(PollModel())
+        private set
 
 
     fun loadCandidates(pollId: String) {
         voteDocId = "${userId}_${pollId}"
-        var currentPoll by mutableStateOf(Poll())
 
-        db.collection("polls").get().addOnSuccessListener { result ->
-            val poll = result.documents.find { it.id == pollId }
-            val title = poll?.getString("title") ?: ""
-            val description = poll?.getString("description") ?: ""
-            currentPoll = Poll(id = pollId, title = title, description = description)
-        }
+        // Clear old data first
+        candidates.clear()
+        selectedCandidateId = null
+        selectedCandidateName = ""
+        hasVoted = false
 
-        // Fetch candidates
-        db.collection("polls")
-            .document(pollId)
-            .collection("candidates")
+        // Step 1: Load Poll
+        db.collection("polls").document(pollId)
             .get()
-            .addOnSuccessListener { result ->
-                candidates.clear()
-                for (doc in result) {
-                    val candidate = Candidate(
-                        id = doc.id,
-                        name = doc.getString("voterName") ?: "",
-                        party = doc.getString("party") ?: "",
-                        agenda = doc.getString("agenda") ?: "",
-                        poll = currentPoll,
-                        timestamp = Timestamp.Companion.now()
-                    )
-                    candidates.add(candidate)
-                }
+            .addOnSuccessListener { poll ->
+                val title = poll.getString("title") ?: ""
+                val description = poll.getString("description") ?: ""
+                currentPollModel = PollModel(id = pollId, title = title, description = description)
+
+                // Step 2: Load candidates under that poll
+                db.collection("polls").document(pollId).collection("candidates")
+                    .get()
+                    .addOnSuccessListener { result ->
+                        val fetchedCandidates = result.map { doc ->
+                            Candidate(
+                                id = doc.id,
+                                candidateName = doc.getString("candidateName") ?: "",
+                                party = doc.getString("party") ?: "",
+                                agenda = doc.getString("agenda") ?: "",
+                                pollModel = currentPollModel,
+                                timestamp = doc.getTimestamp("timestamp") ?: Timestamp.now()
+                            )
+                        }
+                        candidates.addAll(fetchedCandidates)
+                        Log.d("VoteViewModel", "Loaded candidates: ${candidates.size}")
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e("VoteViewModel", "Error loading candidates: ${e.message}")
+                    }
+            }
+            .addOnFailureListener { e ->
+                Log.e("VoteViewModel", "Error loading poll info: ${e.message}")
             }
 
-        // Check if already voted
+        // Step 3: Check if already voted
         db.collection("votes").document(voteDocId)
             .get()
             .addOnSuccessListener { doc ->
                 if (doc.exists()) {
                     hasVoted = true
-                    selectedCandidateName = doc.getString("name") ?: ""
+                    selectedCandidateName = doc.getString("candidateName") ?: "___"
                 }
             }
     }
@@ -86,28 +100,29 @@ class VoteViewModel : ViewModel() {
             val candidateDocRef =
                 pollDocRef.collection("candidates").document(selectedCandidateId!!)
 
-            // Step 1: Get voter name from /users/{userId}
+            // Step 1: Get voter candidateName from /users/{userId}
             userDocRef.get().addOnSuccessListener { userDoc ->
                 val voterName = userDoc.getString("name") ?: "Anonymous"
 
                 // Step 2: Get polls title
                 pollDocRef.get().addOnSuccessListener { pollDoc ->
-                    val pollTitle = pollDoc.getString("title") ?: "Unknown Poll"
+                    val pollModelTitle = pollDoc.getString("title") ?: "Unknown PollModel"
 
-                    // Step 3: Get candidate name
+                    // Step 3: Get candidate candidateName
                     candidateDocRef.get().addOnSuccessListener { candidateDoc ->
                         val candidateName =
-                            candidateDoc.getString("voterName") ?: "Unknown Candidate"
+                            candidateDoc.getString("candidateName") ?: "Unknown Candidate"
 
                         // Step 4: Create VoteModel and save
                         val vote = VoteModel(
                             voteId = voteDocId,
                             voterName = voterName,
                             candidateName = candidateName,
+                            candidateId = selectedCandidateId!!,
                             userId = userId,
                             pollId = pollId,
-                            pollTitle = pollTitle,
-                            voteTime = Timestamp.Companion.now().toDate()
+                            pollTitle = pollModelTitle,
+                            timestamp = Timestamp.Companion.now().toDate()
                         )
 
                         db.collection("votes").document(voteDocId)
