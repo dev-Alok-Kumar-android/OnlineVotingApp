@@ -75,7 +75,7 @@ class AuthViewModel : ViewModel() {
                 name = name,
                 email = email,
                 phone = phone,
-                verified = false,
+                verified = true,
                 deleted = false,
                 createdAt = Timestamp.Companion.now()
             )

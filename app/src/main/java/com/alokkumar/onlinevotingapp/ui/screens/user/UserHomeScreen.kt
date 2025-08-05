@@ -1,9 +1,9 @@
 package com.alokkumar.onlinevotingapp.ui.screens.user
 
-import android.widget.Button
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -21,6 +21,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -63,6 +64,17 @@ fun UserHomeScreen(navController: NavController) {
     val pollModels = remember { mutableStateListOf<PollModel>() }
     var userName by remember { mutableStateOf("") }
 
+    var isVerified by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        db.collection("users")
+            .document(auth.currentUser?.uid ?: "")
+            .get().addOnSuccessListener { doc ->
+                isVerified = doc.getBoolean("verified") ?: false
+                isLoading = false
+            }
+    }
 
     var searchQuery by remember { mutableStateOf("") }
     val onActiveChange: (Boolean) -> Unit = { isActive ->
@@ -161,146 +173,180 @@ fun UserHomeScreen(navController: NavController) {
         }
 
     ) { it ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(it)
-        ) {
-
-            if (showLogoutDialog) {
-                AlertDialog(
-                    onDismissRequest = { showLogoutDialog = false },
-                    title = { Text("Logout") },
-                    text = { Text("Are you sure you want to logout?") },
-                    confirmButton = {
-                        TextButton(onClick = {
-                            FirebaseAuth.getInstance().signOut()
-                            Toast.makeText(context, "Logged out", Toast.LENGTH_SHORT).show()
-                            navController.navigate("auth") {
-                                popUpTo("user_home") { inclusive = true }
-                            }
-                            showLogoutDialog = false
-                        }) {
-                            Text("Yes")
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { showLogoutDialog = false }) {
-                            Text("Cancel")
-                        }
-                    }
-                )
-
+        if (isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(it),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
             }
-            SearchBar(
-                inputField = {
-                    SearchBarDefaults.InputField(
-                        query = searchQuery,
-                        onQueryChange = { searchQuery = it },
-                        onSearch = { /* handle search if needed */ },
-                        expanded = active,
-                        onExpandedChange = onActiveChange,
-                        placeholder = { Text("Search polls...") },
-                        leadingIcon = {
-                            Icon(Icons.Default.Search, contentDescription = "Search")
-                        },
-                        trailingIcon = {
-                            if (searchQuery.isNotEmpty()) {
-                                IconButton(onClick = { searchQuery = "" }) {
-                                    Icon(Icons.Default.Close, contentDescription = "Clear")
+            return@Scaffold
+        }
+        else if (!isVerified) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(it),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("Your email is not verified")
+                Text("Ask the admin to verify your email", modifier = Modifier.padding(22.dp).align(
+                    Alignment.BottomCenter
+                ))
+            }
+            return@Scaffold
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(it)
+            ) {
+
+
+                if (showLogoutDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showLogoutDialog = false },
+                        title = { Text("Logout") },
+                        text = { Text("Are you sure you want to logout?") },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                FirebaseAuth.getInstance().signOut()
+                                Toast.makeText(context, "Logged out", Toast.LENGTH_SHORT).show()
+                                navController.navigate("auth") {
+                                    popUpTo("user_home") { inclusive = true }
                                 }
+                                showLogoutDialog = false
+                            }) {
+                                Text("Yes")
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showLogoutDialog = false }) {
+                                Text("Cancel")
                             }
                         }
                     )
-                },
-                expanded = active,
-                onExpandedChange = onActiveChange,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
-                shape = SearchBarDefaults.inputFieldShape,
-                tonalElevation = SearchBarDefaults.TonalElevation,
-                shadowElevation = SearchBarDefaults.ShadowElevation,
-                windowInsets = SearchBarDefaults.windowInsets,
-                content = {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 8.dp)
-                    ) {
-                        items(filteredPolls) { poll ->
-                            Card(
-                                modifier = Modifier
-                                    .clickable {
-                                        navController.navigate("poll_actions/${poll.id}")
+
+                }
+                SearchBar(
+                    inputField = {
+                        SearchBarDefaults.InputField(
+                            query = searchQuery,
+                            onQueryChange = { searchQuery = it },
+                            onSearch = { /* handle search if needed */ },
+                            expanded = active,
+                            onExpandedChange = onActiveChange,
+                            placeholder = { Text("Search polls...") },
+                            leadingIcon = {
+                                Icon(Icons.Default.Search, contentDescription = "Search")
+                            },
+                            trailingIcon = {
+                                if (searchQuery.isNotEmpty()) {
+                                    IconButton(onClick = { searchQuery = "" }) {
+                                        Icon(Icons.Default.Close, contentDescription = "Clear")
                                     }
-                                    .fillMaxWidth()
-                                    .padding(vertical = 6.dp),
-                                elevation = CardDefaults.cardElevation(4.dp)
-                            ) {
-                                Column(
+                                }
+                            }
+                        )
+                    },
+                    expanded = active,
+                    onExpandedChange = onActiveChange,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    shape = SearchBarDefaults.inputFieldShape,
+                    tonalElevation = SearchBarDefaults.TonalElevation,
+                    shadowElevation = SearchBarDefaults.ShadowElevation,
+                    windowInsets = SearchBarDefaults.windowInsets,
+                    content = {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 8.dp)
+                        ) {
+                            items(filteredPolls) { poll ->
+                                Card(
                                     modifier = Modifier
+                                        .clickable {
+                                            navController.navigate("poll_actions/${poll.id}")
+                                        }
                                         .fillMaxWidth()
-                                        .padding(12.dp)
+                                        .padding(vertical = 6.dp),
+                                    elevation = CardDefaults.cardElevation(4.dp)
                                 ) {
-                                    Text(poll.title, style = MaterialTheme.typography.titleLarge)
-                                    Text(
-                                        poll.description,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        modifier = Modifier.alpha(0.7f)
-                                    )
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(12.dp)
+                                    ) {
+                                        Text(
+                                            poll.title,
+                                            style = MaterialTheme.typography.titleLarge
+                                        )
+                                        Text(
+                                            poll.description,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            modifier = Modifier.alpha(0.7f)
+                                        )
+                                    }
                                 }
                             }
                         }
-                    }
-                },
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            LazyColumn(Modifier.padding(horizontal = 16.dp)) {
-                items(pollModels) { poll ->
-                    Card(
-                        modifier = Modifier
-                            .clickable {
-                                navController.navigate("poll_actions/${poll.id}")
-                            }
-                            .fillMaxWidth()
-                            .padding(vertical = 6.dp),
-                        elevation = CardDefaults.cardElevation(4.dp)
-                    ) {
-                        Column(
+                    },
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                LazyColumn(Modifier.padding(horizontal = 16.dp)) {
+                    items(pollModels) { poll ->
+                        Card(
                             modifier = Modifier
+                                .clickable {
+                                    navController.navigate("poll_actions/${poll.id}")
+                                }
                                 .fillMaxWidth()
-                                .padding(12.dp)
+                                .padding(vertical = 6.dp),
+                            elevation = CardDefaults.cardElevation(4.dp)
                         ) {
-                            Text(poll.title, style = MaterialTheme.typography.titleLarge,maxLines = 1)
-                            Text(
-                                poll.description,
-                                style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier.alpha(0.7f),
-                                maxLines = 2
-                            )
-                        }
-                        Row (
-                            modifier = Modifier
-                                .fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End
-
-                        ) {
-                            Button(
-                                onClick = {
-                                    navController.navigate("vote_screen/${poll.id}")
-                                },
-                                modifier = Modifier.padding(8.dp)
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp)
                             ) {
-                                Text("Vote")
+                                Text(
+                                    poll.title,
+                                    style = MaterialTheme.typography.titleLarge,
+                                    maxLines = 1
+                                )
+                                Text(
+                                    poll.description,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier.alpha(0.7f),
+                                    maxLines = 2
+                                )
                             }
-                            Button(
-                                onClick = {
-                                    navController.navigate("result_screen/${poll.id}")
-                                },
-                                modifier = Modifier.padding(8.dp)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End
+
                             ) {
-                                Text("Results")
+                                Button(
+                                    onClick = {
+                                        navController.navigate("vote_screen/${poll.id}")
+                                    },
+                                    modifier = Modifier.padding(8.dp)
+                                ) {
+                                    Text("Vote")
+                                }
+                                Button(
+                                    onClick = {
+                                        navController.navigate("result_screen/${poll.id}")
+                                    },
+                                    modifier = Modifier.padding(8.dp)
+                                ) {
+                                    Text("Results")
+                                }
                             }
                         }
                     }

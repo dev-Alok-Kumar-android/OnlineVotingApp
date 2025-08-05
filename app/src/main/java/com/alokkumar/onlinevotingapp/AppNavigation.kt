@@ -44,8 +44,8 @@ fun AppNavigation(modifier: Modifier = Modifier,  sessionViewModel: SessionViewM
 
     NavHost(
         navController = navController,
-//        startDestination = startDestination
-        startDestination = Routes.ADMIN_HOME
+        startDestination = startDestination
+//        startDestination = Routes.ADMIN_HOME
     ) {
         // 🔐 Auth Screens
         composable(Routes.AUTH) { AuthScreen(modifier, navController) }
