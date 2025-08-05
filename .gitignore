@@ -22,6 +22,11 @@
 /output.json
 output-metadata.json
 
+# Gradle wrapper files
+gradle/
+gradlew
+gradlew.bat
+
 # NDK/Native
 .externalNativeBuild/
 /cxx/
