@@ -25,9 +25,7 @@ class MonitorVotesViewModel : ViewModel() {
     var isLoading by mutableStateOf(false)
     var errorMessage by mutableStateOf<String?>(null)
 
-    init {
-        loadVotes()
-    }
+    init { loadVotes() }
 
     private fun loadVotes() {
         voteListener = db.collection("votes")
@@ -39,14 +37,14 @@ class MonitorVotesViewModel : ViewModel() {
                 }
                 if (snapshot == null) return@addSnapshotListener
 
-                val votes = snapshot.documents.mapNotNull { doc ->
+                val allVotes = snapshot.documents.mapNotNull { doc ->
                     try {
                         VoteModel(
                             voteId = doc.id,
                             voterName = doc.getString("voterName") ?: "",
                             candidateName = doc.getString("candidateName") ?: "",
                             pollId = doc.getString("pollId") ?: "",
-                            pollTitle = doc.getString("pollTitle") ?: "Unknown PollModel",
+                            pollTitle = doc.getString("pollTitle") ?: "Unknown Poll",
                             userId = doc.getString("userId") ?: "",
                             timestamp = doc.getDate("timestamp")
                         )
@@ -56,50 +54,52 @@ class MonitorVotesViewModel : ViewModel() {
                     }
                 }
 
-                _votes.value = votes
+                _votes.value = allVotes
             }
     }
-
 
     fun deleteVote(voteId: String, onSuccess: () -> Unit = {}, onError: (String) -> Unit = {}) {
         viewModelScope.launch {
             val voteRef = db.collection("votes").document(voteId)
 
-            // First, get the vote data
-            voteRef.get()
-                .addOnSuccessListener { voteSnapshot ->
-                    val pollId = voteSnapshot.getString("pollId")
-                    val candidateId = voteSnapshot.getString("candidateId")
+            voteRef.get().addOnSuccessListener { voteSnapshot ->
+                val pollId = voteSnapshot.getString("pollId")
+                val candidateId = voteSnapshot.getString("candidateId")
 
-                    if (pollId.isNullOrEmpty() || candidateId.isNullOrEmpty()) {
-                        onError("Invalid vote data")
-                        return@addOnSuccessListener
+                if (pollId.isNullOrEmpty() || candidateId.isNullOrEmpty()) {
+                    onError("Invalid vote data")
+                    return@addOnSuccessListener
+                }
+
+                val candidateRef = db.collection("polls").document(pollId).collection("candidates")
+                    .document(candidateId)
+
+                db.runTransaction { transaction ->
+                    val candidateSnap = transaction.get(candidateRef)
+                    val currentVotes = candidateSnap.getLong("votes") ?: 0
+                    val updatedVotes = (currentVotes - 1).coerceAtLeast(0)
+
+                    transaction.update(candidateRef, "votes", updatedVotes)
+                    transaction.delete(voteRef)
+                }.addOnSuccessListener {
+                    val userId = voteSnapshot.getString("userId")
+
+                    if (!userId.isNullOrEmpty()) {
+                        db.collection("polls").document(pollId).collection("voters")
+                            .document(userId).update("hasVoted", false).addOnFailureListener { e ->
+                                Log.e(
+                                    "MonitorVotesVM", "Failed to reset hasVoted: ${e.message}"
+                                )
+                            }
                     }
 
-                    // Reference to candidate document
-                    val candidateRef = db.collection("polls")
-                        .document(pollId)
-                        .collection("candidates")
-                        .document(candidateId)
-
-                    // Run a Firestore transaction to update vote count safely
-                    db.runTransaction { transaction ->
-                        val candidateSnap = transaction.get(candidateRef)
-                        val currentVotes = candidateSnap.getLong("votes") ?: 0
-                        val updatedVotes = (currentVotes - 1).coerceAtLeast(0) // Prevent negative
-
-                        transaction.update(candidateRef, "votes", updatedVotes)
-                        transaction.delete(voteRef)
-                    }.addOnSuccessListener {
-                        db.collection("votes").document(voteId).delete()
-                        onSuccess()
-                    }.addOnFailureListener { e ->
-                        onError("Transaction failed: ${e.message}")
-                    }
+                    onSuccess()
+                }.addOnFailureListener { e ->
+                    onError("Transaction failed: ${e.message}")
                 }
-                .addOnFailureListener { e ->
-                    onError("Failed to fetch vote data: ${e.message}")
-                }
+            }.addOnFailureListener { e ->
+                onError("Failed to fetch vote data: ${e.message}")
+            }
         }
     }
 
@@ -113,5 +113,4 @@ class MonitorVotesViewModel : ViewModel() {
         super.onCleared()
         voteListener?.remove()
     }
-
 }

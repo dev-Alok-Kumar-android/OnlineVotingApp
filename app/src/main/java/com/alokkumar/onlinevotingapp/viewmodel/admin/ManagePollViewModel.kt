@@ -14,8 +14,8 @@ class ManagePollViewModel : ViewModel() {
     private val db = FirebaseFirestore.getInstance()
     private val _polls = MutableStateFlow<List<PollModel>>(emptyList())
     val polls: StateFlow<List<PollModel>> = _polls
-    var isLoading: Boolean by mutableStateOf(false)
-    var errorMessage: String? by mutableStateOf(null)
+    var isLoading by mutableStateOf(false)
+    var errorMessage by mutableStateOf<String?>(null)
 
     private var listener: ListenerRegistration? = null
 
@@ -37,35 +37,60 @@ class ManagePollViewModel : ViewModel() {
     }
 
     fun deletePoll(pollId: String, onResult: (Boolean, String) -> Unit) {
+        isLoading = true
+        errorMessage = null
+
         val pollRef = db.collection("polls").document(pollId)
 
-        // Step 1: Delete associated votes
+        // Step 1: Fetch and delete votes for the poll
         db.collection("votes")
             .whereEqualTo("pollId", pollId)
             .get()
             .addOnSuccessListener { voteSnapshots ->
-                val batch = db.batch()
+                // Step 2: Fetch and delete candidates for the poll
+                db.collection("polls").document(pollId)
+                    .collection("candidates")
+                    .get()
+                    .addOnSuccessListener { candidateSnapshots ->
+                        val batch = db.batch()
 
-                voteSnapshots.documents.forEach { voteDoc ->
-                    batch.delete(voteDoc.reference)
-                }
+                        // Delete all votes
+                        voteSnapshots.documents.forEach { voteDoc ->
+                            batch.delete(voteDoc.reference)
+                        }
 
-                // Step 2: Delete poll after votes
-                batch.delete(pollRef)
+                        // Delete all candidates
+                        candidateSnapshots.documents.forEach { candidateDoc ->
+                            batch.delete(candidateDoc.reference)
+                        }
 
-                batch.commit()
-                    .addOnSuccessListener {
-                        onResult(true, "Poll and its votes deleted successfully")
-                    }
-                    .addOnFailureListener { e ->
-                        onResult(false, "Failed to delete poll votes: ${e.message}")
+                        // Delete poll document
+                        batch.delete(pollRef)
+
+                        // Commit all deletes
+                        batch.commit()
+                            .addOnSuccessListener {
+                                isLoading = false
+                                onResult(true, "Poll, votes, and candidates deleted successfully")
+                            }
+                            .addOnFailureListener { e ->
+                                isLoading = false
+                                errorMessage = e.message
+                                onResult(false, "Failed to delete poll: ${e.message}")
+                            }
+
+                    }.addOnFailureListener { e ->
+                        isLoading = false
+                        errorMessage = e.message
+                        onResult(false, "Failed to fetch candidates: ${e.message}")
                     }
 
             }.addOnFailureListener { e ->
+                isLoading = false
+                errorMessage = e.message
                 onResult(false, "Failed to fetch votes: ${e.message}")
             }
     }
-
 
     override fun onCleared() {
         super.onCleared()

@@ -13,7 +13,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -23,6 +25,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SearchBar
+import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -34,6 +38,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -51,6 +56,27 @@ fun MonitorVotesScreen(
     val votes by viewModel.votes.collectAsState()
     val context = LocalContext.current
     var voteToDelete by remember { mutableStateOf<String?>(null) }
+    var searchQuery by remember { mutableStateOf("") }
+    val onActiveChange: (Boolean) -> Unit = { isActive ->
+        if (!isActive) {
+            searchQuery = ""
+        }
+    }
+    val filteredVotes = remember(searchQuery, votes) {
+        if (searchQuery.isBlank()) {
+            votes
+        } else {
+            votes.filter {
+                it.voteId.contains(searchQuery, ignoreCase = true) ||
+                        it.voterName.contains(searchQuery, ignoreCase = true) ||
+                        it.candidateName.contains(searchQuery, ignoreCase = true) ||
+                        it.pollTitle.contains(searchQuery, ignoreCase = true) ||
+                        viewModel.formatTime(it.timestamp).contains(searchQuery, ignoreCase = true)
+
+            }
+        }
+    }
+    val activeSearch = searchQuery.isNotBlank()
 
     Scaffold(
         topBar = {
@@ -63,80 +89,135 @@ fun MonitorVotesScreen(
                 }
             )
         }
-    ) { innerPadding ->
-        Box(
+    )
+    { innerPadding ->
+        Column(
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize()
         ) {
-            when {
-                viewModel.isLoading -> {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                }
 
-                viewModel.errorMessage != null -> {
-                    Text(
-                        text = viewModel.errorMessage ?: "",
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                }
-
-                else -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp)
-                    ) {
-                        if (votes.isEmpty()) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(16.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "No votes found",
-                                    fontSize = 18.sp,
-                                    color = MaterialTheme.colorScheme.error
-                                )
+            SearchBar(
+                inputField = {
+                    SearchBarDefaults.InputField(
+                        query = searchQuery,
+                        onQueryChange = { searchQuery = it },
+                        onSearch = { /* handle search if needed */ },
+                        expanded = activeSearch,
+                        onExpandedChange = onActiveChange,
+                        placeholder = { Text("Search votes...") },
+                        leadingIcon = {
+                            Icon(Icons.Default.Search, contentDescription = "Search")
+                        },
+                        trailingIcon = {
+                            if (searchQuery.isNotEmpty()) {
+                                IconButton(onClick = { searchQuery = "" }) {
+                                    Icon(Icons.Default.Close, contentDescription = "Clear")
+                                }
                             }
                         }
-
-                        LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            items(votes) { vote ->
-                                Card(
+                    )
+                },
+                expanded = activeSearch,
+                onExpandedChange = onActiveChange,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                shape = SearchBarDefaults.inputFieldShape,
+                tonalElevation = SearchBarDefaults.TonalElevation,
+                shadowElevation = SearchBarDefaults.ShadowElevation,
+                windowInsets = SearchBarDefaults.windowInsets,
+                content = {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 8.dp)
+                    ) {
+                        items(filteredVotes) { vote ->
+                            Card(
+                                modifier = Modifier
+                                    .clickable {
+                                        navController.navigate("${Routes.VOTE_DETAIL}/${vote.voteId}")
+                                    }
+                                    .fillMaxWidth()
+                                    .padding(vertical = 6.dp),
+                                elevation = CardDefaults.cardElevation(4.dp)
+                            ) {
+                                Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .clickable {
-                                            navController.navigate("${Routes.VOTE_DETAIL}/${vote.voteId}")
-                                        },
-                                    elevation = CardDefaults.cardElevation(4.dp)
+                                        .padding(12.dp)
                                 ) {
-                                    Column(modifier = Modifier.padding(12.dp)) {
-                                        Text("💈 PollModel: ${vote.pollTitle}", fontSize = 18.sp)
-                                        Text(
-                                            "🧑 ${vote.voterName} ➝ 🗳️ ${vote.candidateName}",
-                                            fontSize = 18.sp
-                                        )
-                                        Text(
-                                            "🕒 ${viewModel.formatTime(vote.timestamp)}",
-                                            fontSize = 14.sp
-                                        )
+                                    Text(
+                                        vote.pollTitle,
+                                        style = MaterialTheme.typography.titleLarge
+                                    )
+                                    Text(
+                                        "${vote.voterName} 🗳️ ${vote.candidateName}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        modifier = Modifier.alpha(0.7f)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                },
+            )
 
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.End
-                                        ) {
-                                            IconButton(onClick = {
-                                                voteToDelete = vote.voteId
-                                            }) {
-                                                Icon(
-                                                    Icons.Default.Delete,
-                                                    contentDescription = "Delete Vote"
-                                                )
-                                            }
-                                        }
+            // Votes UI
+            when {
+                viewModel.isLoading -> Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+
+                viewModel.errorMessage != null -> Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(viewModel.errorMessage!!, color = MaterialTheme.colorScheme.error)
+                }
+
+                votes.isEmpty() -> Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("No votes found", fontSize = 18.sp)
+                }
+
+                else -> LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(votes) { vote ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 2.dp)
+                                .clickable { navController.navigate("${Routes.VOTE_DETAIL}/${vote.voteId}") },
+                            elevation = CardDefaults.cardElevation(4.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Text("💈 Poll: ${vote.pollTitle}", fontSize = 18.sp)
+                                Text(
+                                    "🧑 ${vote.voterName} ➝ 🗳️ ${vote.candidateName}",
+                                    fontSize = 18.sp
+                                )
+                                Text("🕒 ${viewModel.formatTime(vote.timestamp)}", fontSize = 14.sp)
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.End
+                                ) {
+                                    IconButton(onClick = {
+                                        voteToDelete = vote.voteId
+                                    }) {
+                                        Icon(
+                                            Icons.Default.Delete,
+                                            contentDescription = "Delete Vote"
+                                        )
                                     }
                                 }
                             }
@@ -147,7 +228,7 @@ fun MonitorVotesScreen(
         }
     }
 
-    // Confirmation Dialog
+    // Delete Confirmation Dialog
     voteToDelete?.let { id ->
         AlertDialog(
             onDismissRequest = { voteToDelete = null },

@@ -61,21 +61,13 @@ fun UserHomeScreen(navController: NavController) {
     val auth = FirebaseAuth.getInstance()
 
     var showLogoutDialog by remember { mutableStateOf(false) }
-    val pollModels = remember { mutableStateListOf<PollModel>() }
     var userName by remember { mutableStateOf("") }
 
     var isVerified by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(true) }
 
-    LaunchedEffect(Unit) {
-        db.collection("users")
-            .document(auth.currentUser?.uid ?: "")
-            .get().addOnSuccessListener { doc ->
-                isVerified = doc.getBoolean("verified") ?: false
-                isLoading = false
-            }
-    }
 
+    val pollModels = remember { mutableStateListOf<PollModel>() }
     var searchQuery by remember { mutableStateOf("") }
     val onActiveChange: (Boolean) -> Unit = { isActive ->
         if (!isActive) {
@@ -100,6 +92,8 @@ fun UserHomeScreen(navController: NavController) {
             db.collection("users").document(uid).get()
                 .addOnSuccessListener { doc ->
                     userName = doc.getString("name") ?: ""
+                    isVerified = doc.getBoolean("verified") ?: false
+                    isLoading = false
                 }
         }
     }
@@ -163,7 +157,7 @@ fun UserHomeScreen(navController: NavController) {
 
                     IconButton(onClick = { showLogoutDialog = true }) {
                         Icon(
-                            Icons.AutoMirrored.Filled.ExitToApp,
+                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
                             contentDescription = "Logout",
                             tint = MaterialTheme.colorScheme.onPrimaryContainer
                         )
@@ -296,6 +290,7 @@ fun UserHomeScreen(navController: NavController) {
                         }
                     },
                 )
+
                 Spacer(modifier = Modifier.height(8.dp))
                 LazyColumn(Modifier.padding(horizontal = 16.dp)) {
                     items(pollModels) { poll ->
