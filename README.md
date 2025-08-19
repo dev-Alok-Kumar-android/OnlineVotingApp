@@ -9,18 +9,18 @@ An Android application for secure and easy online voting. Built with **Jetpack C
 ### 🔐 Authentication
 - Role-based login (Admin / Voter)
 - Firebase Authentication (Email & Password)
-- Password reset functionality
+- Password reset functionality for users
 
 ### 🧑‍💼 Admin
 - Manage polls (create, edit, delete)
 - Manage candidates
 - Manage voter list
-- View poll results
-- Secure access via admin login
+- Monitor votes
+- Can be a Voter
 
 ### 🗳️ Voter
 - Login or Sign Up
-- View available polls
+- View available polls (with search functionality)
 - Vote securely (one vote per poll)
 - Real-time results display
 - Firebase Firestore ensures data persistence
@@ -52,19 +52,21 @@ An Android application for secure and easy online voting. Built with **Jetpack C
 
 #### 🔐 Authentication Screens
 
-| Auth Screen                            | Login Screen                                                | Registration Screen                                   |
-|----------------------------------------|-------------------------------------------------------------|-------------------------------------------------------|
-| ![Auth](screenshots/auth_screen.png)   | ![Auth](screenshots/login_screen.png)                       | ![Auth](screenshots/registration_screen.png)          |
-| Choose admin or voter                  | Login Screen for Voter; admin login screen looks similar    | Registration Screen for Voter, not for admins         |
+(Note:- I used MaterialTheme so all things are green on some screen and on that device cursive font is not installed so it automatically pick default font)
+
+| Auth Screen                            | Login Screen                                             | Registration Screen                            |
+|----------------------------------------|----------------------------------------------------------|------------------------------------------------|
+| ![Auth](screenshots/auth_screen.png)   | ![Auth](screenshots/login_screen.png)                    | ![Auth](screenshots/registration_screen.png)   |
+| Choose admin or voter                  | Login Screen for Voter; admin login screen looks similar | Registration Screen for Voter, not for admins  |
 
 ---
 
 #### 🏠 Landing Pages
 
-| Admin Home Screen                    | Voter Poll List                                        |
-|--------------------------------------|--------------------------------------------------------|
-| ![Admin](screenshots/admin_home.png) | ![Polls](screenshots/voter_polls.png)                  |
-| Home/Landing screen for Admin        | Landing page for Voter/User. Here they can select Poll |
+| Admin Home Screen                    | Voter Poll List                                                                    |
+|--------------------------------------|------------------------------------------------------------------------------------|
+| ![Admin](screenshots/admin_home.png) | ![Polls](screenshots/voter_polls.png)                                              |
+| Home/Landing screen for Admin        | Landing page for Voter/User. Here they can select Poll (I added Search logic here) |
 
 ---
 
@@ -74,6 +76,15 @@ An Android application for secure and easy online voting. Built with **Jetpack C
 |----------------------------------------------|-----------------------------------------|-----------------------------------|
 | ![VoteOrResult](screenshots/poll_action.png) | ![Vote](screenshots/vote.png)           | ![Result](screenshots/result.png) |
 | Poll actions: Vote or View Result for Voter  | Voter selects and votes for a candidate | Voter sees the voting result      |
+
+---
+
+#### 🗳️ Admin Screens
+
+| Manage Voter Screen                           | Manage Poll Screen                   | View States Screen                     | Monitor Votes Screen                     |
+|-----------------------------------------------|--------------------------------------|----------------------------------------|------------------------------------------|
+| ![Manage Voter](screenshots/manage_voter.png) | ![Vote](screenshots/manage_poll.png) | ![Result](screenshots/view_states.png) | ![Result](screenshots/monitor_votes.png) |
+| Actions related to voter(verify,delete)       | Create or edit Poll and candidates   | Just View all things in one place      | View or delete votes                     |
 
 ---
 
@@ -176,11 +187,9 @@ com.alokkumar.onlinevotingapp
   - Connect emulator or device
   - Click ▶️ Run in Android Studio
 
-### ✅ TODO (Future Enhancements)
+### Download app
 
-- [ ] 🔐 Admin analytics dashboard
-- [ ] 📈 Voting stats chart
-- [ ] 🌐 Multi-language support
+- ```click here ↣``` https://github.com/dev-Alok-Kumar-android/OnlineVotingApp/releases/download/v1.0.0/OnlineVotingApp-v1.0.apk
 
 ### 📫 Contact
   Feel free to reach out via:
